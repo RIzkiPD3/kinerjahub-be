@@ -2,10 +2,13 @@
   "name": "kinerjahub-be",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn src/server.ts"
+    "dev": "ts-node-dev --respawn src/server.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma generate && prisma migrate dev",
+    "prisma:reset": "prisma migrate reset"
   },
   "keywords": [],
   "author": "",
