@@ -17,13 +17,4 @@ import * as Prisma from './internal/prismaNamespaceBrowser'
 export { Prisma }
 export * as $Enums from './enums'
 export * from './enums';
-/**
- * Model Department
- * 
- */
-export type Department = Prisma.DepartmentModel
-/**
- * Model Organization
- * 
- */
-export type Organization = Prisma.OrganizationModel
+

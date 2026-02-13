@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.4.0",
   "engineVersion": "ab56fe763f921d033a6c195e7ddeb3e255bdbb57",
   "activeProvider": "postgresql",
-  "inlineSchema": "model Department {\n  id             Int    @id @default(autoincrement())\n  name           String @db.VarChar(255)\n  organizationId Int    @map(\"organization_id\")\n  divisionId     Int    @map(\"division_id\")\n\n  organization Organization @relation(fields: [organizationId], references: [id])\n  //   division     Division @relation(fields: [divisionId], references: [id])\n\n  createdAt DateTime  @default(now()) @map(\"created_at\")\n  updatedAt DateTime  @updatedAt @map(\"updated_at\")\n  deletedAt DateTime? @map(\"deleted_at\")\n\n  @@map(\"departments\")\n}\n\nmodel Organization {\n  id        Int       @id @default(autoincrement())\n  name      String    @db.VarChar(50)\n  createdAt DateTime  @default(now()) @map(\"created_at\")\n  updateAt  DateTime  @updatedAt @map(\"update_at\")\n  deletedAt DateTime? @map(\"delete_at\")\n\n  departments Department[]\n  // divisions   Division[]\n\n  @@map(\"organizations\")\n}\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -32,10 +32,10 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Department\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"organizationId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"organization_id\"},{\"name\":\"divisionId\",\"kind\":\"scalar\",\"type\":\"Int\",\"dbName\":\"division_id\"},{\"name\":\"organization\",\"kind\":\"object\",\"type\":\"Organization\",\"relationName\":\"DepartmentToOrganization\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"updated_at\"},{\"name\":\"deletedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"deleted_at\"}],\"dbName\":\"departments\"},\"Organization\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"created_at\"},{\"name\":\"updateAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"update_at\"},{\"name\":\"deletedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\",\"dbName\":\"delete_at\"},{\"name\":\"departments\",\"kind\":\"object\",\"type\":\"Department\",\"relationName\":\"DepartmentToOrganization\"}],\"dbName\":\"organizations\"}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{},\"enums\":{},\"types\":{}}")
 config.parameterizationSchema = {
-  strings: JSON.parse("[\"where\",\"orderBy\",\"cursor\",\"departments\",\"_count\",\"organization\",\"Department.findUnique\",\"Department.findUniqueOrThrow\",\"Department.findFirst\",\"Department.findFirstOrThrow\",\"Department.findMany\",\"data\",\"Department.createOne\",\"Department.createMany\",\"Department.createManyAndReturn\",\"Department.updateOne\",\"Department.updateMany\",\"Department.updateManyAndReturn\",\"create\",\"update\",\"Department.upsertOne\",\"Department.deleteOne\",\"Department.deleteMany\",\"having\",\"_avg\",\"_sum\",\"_min\",\"_max\",\"Department.groupBy\",\"Department.aggregate\",\"Organization.findUnique\",\"Organization.findUniqueOrThrow\",\"Organization.findFirst\",\"Organization.findFirstOrThrow\",\"Organization.findMany\",\"Organization.createOne\",\"Organization.createMany\",\"Organization.createManyAndReturn\",\"Organization.updateOne\",\"Organization.updateMany\",\"Organization.updateManyAndReturn\",\"Organization.upsertOne\",\"Organization.deleteOne\",\"Organization.deleteMany\",\"Organization.groupBy\",\"Organization.aggregate\",\"AND\",\"OR\",\"NOT\",\"id\",\"name\",\"createdAt\",\"updateAt\",\"deletedAt\",\"equals\",\"in\",\"notIn\",\"lt\",\"lte\",\"gt\",\"gte\",\"not\",\"contains\",\"startsWith\",\"endsWith\",\"every\",\"some\",\"none\",\"organizationId\",\"divisionId\",\"updatedAt\",\"is\",\"isNot\",\"connectOrCreate\",\"upsert\",\"createMany\",\"set\",\"disconnect\",\"delete\",\"connect\",\"updateMany\",\"deleteMany\",\"increment\",\"decrement\",\"multiply\",\"divide\"]"),
-  graph: "cxYgCwUAAEwAIC4AAEsAMC8AAAMAEDAAAEsAMDECAAAAATIBAEYAITNAAEcAITVAAEgAIUQCAEUAIUUCAEUAIUZAAEcAIQEAAAABACALBQAATAAgLgAASwAwLwAAAwAQMAAASwAwMQIARQAhMgEARgAhM0AARwAhNUAASAAhRAIARQAhRQIARQAhRkAARwAhAgUAAG0AIDUAAE0AIAMAAAADACABAAAEADACAAABACABAAAAAwAgAQAAAAEAIAMAAAADACABAAAEADACAAABACADAAAAAwAgAQAABAAwAgAAAQAgAwAAAAMAIAEAAAQAMAIAAAEAIAgFAABsACAxAgAAAAEyAQAAAAEzQAAAAAE1QAAAAAFEAgAAAAFFAgAAAAFGQAAAAAEBCwAACwAgBzECAAAAATIBAAAAATNAAAAAATVAAAAAAUQCAAAAAUUCAAAAAUZAAAAAAQELAAANADABCwAADQAwCAUAAGsAIDECAFYAITIBAFMAITNAAFQAITVAAFUAIUQCAFYAIUUCAFYAIUZAAFQAIQIAAAABACALAAAQACAHMQIAVgAhMgEAUwAhM0AAVAAhNUAAVQAhRAIAVgAhRQIAVgAhRkAAVAAhAgAAAAMAIAsAABIAIAIAAAADACALAAASACADAAAAAQAgEgAACwAgEwAAEAAgAQAAAAEAIAEAAAADACAGBAAAZgAgGAAAZwAgGQAAagAgGgAAaQAgGwAAaAAgNQAATQAgCi4AAEoAMC8AABkAEDAAAEoAMDECADYAITIBADcAITNAADgAITVAADkAIUQCADYAIUUCADYAIUZAADgAIQMAAAADACABAAAYADAXAAAZACADAAAAAwAgAQAABAAwAgAAAQAgCQMAAEkAIC4AAEQAMC8AAB8AEDAAAEQAMDECAAAAATIBAEYAITNAAEcAITRAAEcAITVAAEgAIQEAAAAcACABAAAAHAAgCQMAAEkAIC4AAEQAMC8AAB8AEDAAAEQAMDECAEUAITIBAEYAITNAAEcAITRAAEcAITVAAEgAIQIDAABlACA1AABNACADAAAAHwAgAQAAIAAwAgAAHAAgAwAAAB8AIAEAACAAMAIAABwAIAMAAAAfACABAAAgADACAAAcACAGAwAAZAAgMQIAAAABMgEAAAABM0AAAAABNEAAAAABNUAAAAABAQsAACQAIAUxAgAAAAEyAQAAAAEzQAAAAAE0QAAAAAE1QAAAAAEBCwAAJgAwAQsAACYAMAYDAABXACAxAgBWACEyAQBTACEzQABUACE0QABUACE1QABVACECAAAAHAAgCwAAKQAgBTECAFYAITIBAFMAITNAAFQAITRAAFQAITVAAFUAIQIAAAAfACALAAArACACAAAAHwAgCwAAKwAgAwAAABwAIBIAACQAIBMAACkAIAEAAAAcACABAAAAHwAgBgQAAE4AIBgAAE8AIBkAAFIAIBoAAFEAIBsAAFAAIDUAAE0AIAguAAA1ADAvAAAyABAwAAA1ADAxAgA2ACEyAQA3ACEzQAA4ACE0QAA4ACE1QAA5ACEDAAAAHwAgAQAAMQAwFwAAMgAgAwAAAB8AIAEAACAAMAIAABwAIAguAAA1ADAvAAAyABAwAAA1ADAxAgA2ACEyAQA3ACEzQAA4ACE0QAA4ACE1QAA5ACENBAAAPgAgGAAAQwAgGQAAPgAgGgAAPgAgGwAAPgAgNgIAAAABNwIAAAAEOAIAAAAEOQIAAAABOgIAAAABOwIAAAABPAIAAAABPQIAQgAhDgQAAD4AIBoAAEEAIBsAAEEAIDYBAAAAATcBAAAABDgBAAAABDkBAAAAAToBAAAAATsBAAAAATwBAAAAAT0BAEAAIT4BAAAAAT8BAAAAAUABAAAAAQsEAAA-ACAaAAA_ACAbAAA_ACA2QAAAAAE3QAAAAAQ4QAAAAAQ5QAAAAAE6QAAAAAE7QAAAAAE8QAAAAAE9QAA9ACELBAAAOwAgGgAAPAAgGwAAPAAgNkAAAAABN0AAAAAFOEAAAAAFOUAAAAABOkAAAAABO0AAAAABPEAAAAABPUAAOgAhCwQAADsAIBoAADwAIBsAADwAIDZAAAAAATdAAAAABThAAAAABTlAAAAAATpAAAAAATtAAAAAATxAAAAAAT1AADoAIQg2AgAAAAE3AgAAAAU4AgAAAAU5AgAAAAE6AgAAAAE7AgAAAAE8AgAAAAE9AgA7ACEINkAAAAABN0AAAAAFOEAAAAAFOUAAAAABOkAAAAABO0AAAAABPEAAAAABPUAAPAAhCwQAAD4AIBoAAD8AIBsAAD8AIDZAAAAAATdAAAAABDhAAAAABDlAAAAAATpAAAAAATtAAAAAATxAAAAAAT1AAD0AIQg2AgAAAAE3AgAAAAQ4AgAAAAQ5AgAAAAE6AgAAAAE7AgAAAAE8AgAAAAE9AgA-ACEINkAAAAABN0AAAAAEOEAAAAAEOUAAAAABOkAAAAABO0AAAAABPEAAAAABPUAAPwAhDgQAAD4AIBoAAEEAIBsAAEEAIDYBAAAAATcBAAAABDgBAAAABDkBAAAAAToBAAAAATsBAAAAATwBAAAAAT0BAEAAIT4BAAAAAT8BAAAAAUABAAAAAQs2AQAAAAE3AQAAAAQ4AQAAAAQ5AQAAAAE6AQAAAAE7AQAAAAE8AQAAAAE9AQBBACE-AQAAAAE_AQAAAAFAAQAAAAENBAAAPgAgGAAAQwAgGQAAPgAgGgAAPgAgGwAAPgAgNgIAAAABNwIAAAAEOAIAAAAEOQIAAAABOgIAAAABOwIAAAABPAIAAAABPQIAQgAhCDYIAAAAATcIAAAABDgIAAAABDkIAAAAAToIAAAAATsIAAAAATwIAAAAAT0IAEMAIQkDAABJACAuAABEADAvAAAfABAwAABEADAxAgBFACEyAQBGACEzQABHACE0QABHACE1QABIACEINgIAAAABNwIAAAAEOAIAAAAEOQIAAAABOgIAAAABOwIAAAABPAIAAAABPQIAPgAhCzYBAAAAATcBAAAABDgBAAAABDkBAAAAAToBAAAAATsBAAAAATwBAAAAAT0BAEEAIT4BAAAAAT8BAAAAAUABAAAAAQg2QAAAAAE3QAAAAAQ4QAAAAAQ5QAAAAAE6QAAAAAE7QAAAAAE8QAAAAAE9QAA_ACEINkAAAAABN0AAAAAFOEAAAAAFOUAAAAABOkAAAAABO0AAAAABPEAAAAABPUAAPAAhA0EAAAMAIEIAAAMAIEMAAAMAIAouAABKADAvAAAZABAwAABKADAxAgA2ACEyAQA3ACEzQAA4ACE1QAA5ACFEAgA2ACFFAgA2ACFGQAA4ACELBQAATAAgLgAASwAwLwAAAwAQMAAASwAwMQIARQAhMgEARgAhM0AARwAhNUAASAAhRAIARQAhRQIARQAhRkAARwAhCwMAAEkAIC4AAEQAMC8AAB8AEDAAAEQAMDECAEUAITIBAEYAITNAAEcAITRAAEcAITVAAEgAIUcAAB8AIEgAAB8AIAAAAAAAAAFMAQAAAAEBTEAAAAABAUxAAAAAAQVMAgAAAAFSAgAAAAFTAgAAAAFUAgAAAAFVAgAAAAELEgAAWAAwEwAAXQAwSQAAWQAwSgAAWgAwSwAAWwAgTAAAXAAwTQAAXAAwTgAAXAAwTwAAXAAwUAAAXgAwUQAAXwAwBjECAAAAATIBAAAAATNAAAAAATVAAAAAAUUCAAAAAUZAAAAAAQIAAAABACASAABjACADAAAAAQAgEgAAYwAgEwAAYgAgAQsAAHMAMAsFAABMACAuAABLADAvAAADABAwAABLADAxAgAAAAEyAQBGACEzQABHACE1QABIACFEAgBFACFFAgBFACFGQABHACECAAAAAQAgCwAAYgAgAgAAAGAAIAsAAGEAIAouAABfADAvAABgABAwAABfADAxAgBFACEyAQBGACEzQABHACE1QABIACFEAgBFACFFAgBFACFGQABHACEKLgAAXwAwLwAAYAAQMAAAXwAwMQIARQAhMgEARgAhM0AARwAhNUAASAAhRAIARQAhRQIARQAhRkAARwAhBjECAFYAITIBAFMAITNAAFQAITVAAFUAIUUCAFYAIUZAAFQAIQYxAgBWACEyAQBTACEzQABUACE1QABVACFFAgBWACFGQABUACEGMQIAAAABMgEAAAABM0AAAAABNUAAAAABRQIAAAABRkAAAAABBBIAAFgAMEkAAFkAMEsAAFsAIE8AAFwAMAAAAAAAAAUSAABuACATAABxACBJAABvACBKAABwACBPAAAcACADEgAAbgAgSQAAbwAgTwAAHAAgAgMAAGUAIDUAAE0AIAUxAgAAAAEyAQAAAAEzQAAAAAE0QAAAAAE1QAAAAAECAAAAHAAgEgAAbgAgAwAAAB8AIBIAAG4AIBMAAHIAIAcAAAAfACALAAByACAxAgBWACEyAQBTACEzQABUACE0QABUACE1QABVACEFMQIAVgAhMgEAUwAhM0AAVAAhNEAAVAAhNUAAVQAhBjECAAAAATIBAAAAATNAAAAAATVAAAAAAUUCAAAAAUZAAAAAAQEFAAICAwUBBAADAQMGAAABBQACAQUAAgUEAAgYAAkZAAoaAAsbAAwAAAAAAAUEAAgYAAkZAAoaAAsbAAwAAAUEABEYABIZABMaABQbABUAAAAAAAUEABEYABIZABMaABQbABUGAgEHBwEICAEJCQEKCgEMDAENDgQODwUPEQEQEwQRFAYUFQEVFgEWFwQcGgcdGw0eHQIfHgIgIQIhIgIiIwIjJQIkJwQlKA4mKgInLAQoLQ8pLgIqLwIrMAQsMxAtNBY"
+  strings: JSON.parse("[]"),
+  graph: "AAAA"
 }
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
@@ -68,8 +68,8 @@ export interface PrismaClientConstructor {
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more Departments
-   * const departments = await prisma.department.findMany()
+   * // Fetch zero or more Users
+   * const users = await prisma.user.findMany()
    * ```
    * 
    * Read more in our [docs](https://pris.ly/d/client).
@@ -90,8 +90,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Departments
- * const departments = await prisma.department.findMany()
+ * // Fetch zero or more Users
+ * const users = await prisma.user.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -184,25 +184,7 @@ export interface PrismaClient<
     extArgs: ExtArgs
   }>>
 
-      /**
-   * `prisma.department`: Exposes CRUD operations for the **Department** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Departments
-    * const departments = await prisma.department.findMany()
-    * ```
-    */
-  get department(): Prisma.DepartmentDelegate<ExtArgs, { omit: OmitOpts }>;
-
-  /**
-   * `prisma.organization`: Exposes CRUD operations for the **Organization** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more Organizations
-    * const organizations = await prisma.organization.findMany()
-    * ```
-    */
-  get organization(): Prisma.OrganizationDelegate<ExtArgs, { omit: OmitOpts }>;
+    
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

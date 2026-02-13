@@ -6,6 +6,7 @@ model Organization {
     deletedAt       DateTime? @map("delete_at")
 
     departments Department[]
+    users       User[]
     // divisions   Division[]
 
     @@map("organizations")
