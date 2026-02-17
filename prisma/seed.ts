@@ -22,6 +22,8 @@ async function main() {
         create: {
             id: 1,
             name: "Default Organization",
+            address: "Default Address",
+            phone: "08123456789",
         },
     });
 
