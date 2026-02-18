@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -159,6 +158,11 @@ export const register = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+interface JwtPayload {
+  id: number;
+  email: string;
+  role: string;
+}
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body as {
@@ -181,6 +185,9 @@ export const login = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
+      include: {
+        role: true, // 🔥 ambil role
+      },
     });
 
     if (!user) {
@@ -196,7 +203,11 @@ export const login = async (req: Request, res: Response) => {
     const { password: _, ...userWithoutPassword } = user;
 
     const token = jwt.sign(
-      { id: userWithoutPassword.id, email: userWithoutPassword.email },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role.name, // 🔥 sekarang JWT bawa role
+      },
       process.env.JWT_SECRET as string,
       { expiresIn: "7d" }
     );
@@ -204,7 +215,12 @@ export const login = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "Login success",
       token,
-      data: userWithoutPassword,
+      data: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role.name,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
