@@ -1,14 +1,19 @@
 model Organization {
-    id              Int @id @default(autoincrement())
-    name            String  @db.VarChar(50)
-    address         String @db.VarChar(255)
-    createdAt       DateTime @default(now()) @map("created_at")
-    updateAt        DateTime @updatedAt @map("update_at")
-    deletedAt       DateTime? @map("delete_at")
+    id         Int      @id @default(autoincrement())
+    name       String
+    address    String
+    phone      String
+    created_at DateTime @default(now()) @map("created_at")
+    updated_at DateTime @updatedAt @map("updated_at")
 
+    // Relations
+    divisions   Division[]
     departments Department[]
-    users User[]
-    // divisions   Division[]
+    roles       Role[]
+    users       User[]
+    tasks       Task[]
+    task_logs   TaskLog[]
+    attendances Attendance[]
 
     @@map("organizations")
 }

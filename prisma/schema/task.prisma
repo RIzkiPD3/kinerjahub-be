@@ -1,0 +1,27 @@
+model Task {
+    id              Int        @id @default(autoincrement())
+    organization_id Int        @map("organization_id")
+    department_id   Int        @map("department_id")
+    title           String
+    description     String?    @db.Text
+    status          TaskStatus @default(TO_DO)
+    story_point     Int        @map("story_point")
+    deadline        DateTime   @db.Date
+    created_by      Int        @map("created_by")
+    assigned_to     Int        @map("assigned_to")
+    created_at      DateTime   @default(now()) @map("created_at")
+    updated_at      DateTime   @updatedAt @map("updated_at")
+
+    // Relations
+    organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+    department   Department   @relation(fields: [department_id], references: [id], onDelete: Cascade)
+    creator      User         @relation("TaskCreatedBy", fields: [created_by], references: [id], onDelete: Cascade)
+    assignee     User         @relation("TaskAssignedTo", fields: [assigned_to], references: [id], onDelete: Cascade)
+    task_logs    TaskLog[]
+
+    @@index([organization_id])
+    @@index([department_id])
+    @@index([created_by])
+    @@index([assigned_to])
+    @@map("tasks")
+}

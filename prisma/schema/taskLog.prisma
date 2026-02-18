@@ -1,0 +1,20 @@
+model TaskLog {
+    id              Int         @id @default(autoincrement())
+    organization_id Int         @map("organization_id")
+    task_id         Int         @map("task_id")
+    user_id         Int         @map("user_id")
+    activity        String      @db.Text
+    old_status      TaskStatus? @map("old_status")
+    new_status      TaskStatus? @map("new_status")
+    created_at      DateTime    @default(now()) @map("created_at")
+
+    // Relations
+    organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+    task         Task         @relation(fields: [task_id], references: [id], onDelete: Cascade)
+    user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+    @@index([organization_id])
+    @@index([task_id])
+    @@index([user_id])
+    @@map("task_logs")
+}

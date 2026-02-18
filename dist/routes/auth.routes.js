@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { register, login } from "../controllers/auth.controller";
-
-const authRouter = Router();
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_controller_1 = require("../controllers/auth.controller");
+const authRouter = (0, express_1.Router)();
 /**
  * @openapi
  * /api/auth/register:
@@ -21,9 +21,9 @@ const authRouter = Router();
  *               - email
  *               - name
  *               - password
- *               - organization_name
- *               - organization_address
- *               - organization_phone
+ *               - organization_id
+ *               - department_id
+ *               - role_id
  *             properties:
  *               email:
  *                 type: string
@@ -34,15 +34,15 @@ const authRouter = Router();
  *               password:
  *                 type: string
  *                 default: password123
- *               organization_name:
- *                 type: string
- *                 default: Example Corp
- *               organization_address:
- *                 type: string
- *                 default: 123 Main St, Jakarta
- *               organization_phone:
- *                 type: string
- *                 default: +62 812-3456-7890
+ *               organization_id:
+ *                 type: integer
+ *                 default: 1
+ *               department_id:
+ *                 type: integer
+ *                 default: 1
+ *               role_id:
+ *                 type: integer
+ *                 default: 1
  *     responses:
  *       201:
  *         description: User created successfully
@@ -53,8 +53,7 @@ const authRouter = Router();
  *       500:
  *         description: Internal Server Error
  */
-authRouter.post("/register", register);
-
+authRouter.post("/register", auth_controller_1.register);
 /**
  * @openapi
  * /api/auth/login:
@@ -89,6 +88,5 @@ authRouter.post("/register", register);
  *       500:
  *         description: Internal Server Error
  */
-authRouter.post("/login", login);
-
-export default authRouter;
+authRouter.post("/login", auth_controller_1.login);
+exports.default = authRouter;

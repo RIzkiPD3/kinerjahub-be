@@ -1,0 +1,12 @@
+enum TaskStatus {
+    TO_DO
+    IN_PROGRESS
+    DONE
+}
+
+enum AttendanceStatus {
+    PRESENT
+    SICK
+    PERMISSION
+    ABSENT
+}
