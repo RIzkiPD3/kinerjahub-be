@@ -1,9 +1,14 @@
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
+  name         String   @db.VarChar(100)
+  phoneNumber  String   @map("phone_number") @db.VarChar(20)
+  organizationId Int    @map("organization_id")
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@map("users")
 }
