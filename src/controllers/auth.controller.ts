@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 
@@ -220,8 +221,16 @@ export const login = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: userWithoutPassword.id, email: userWithoutPassword.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
+
     return res.status(200).json({
       message: "Login success",
+      token,
       data: userWithoutPassword,
     });
   } catch (error) {
