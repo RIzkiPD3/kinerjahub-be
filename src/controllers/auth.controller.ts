@@ -15,10 +15,11 @@ export const register = async (req: Request, res: Response) => {
     password?: unknown;
     organization_name?: unknown;
     organization_address?: unknown;
-    organization_phone?: unknown;
+    phone_number?: unknown;
     organizationName?: unknown;
     organizationAddress?: unknown;
     phoneNumber?: unknown;
+    no_handphone?: unknown;
   };
 
   const email = body.email;
@@ -27,7 +28,7 @@ export const register = async (req: Request, res: Response) => {
   const organizationName = body.organization_name ?? body.organizationName;
   const organizationAddress =
     body.organization_address ?? body.organizationAddress;
-  const organizationPhone = body.organization_phone ?? body.phoneNumber;
+  const phoneNumber = body.phone_number ?? body.phoneNumber ?? body.no_handphone;
 
   if (
     typeof email !== "string" ||
@@ -35,11 +36,11 @@ export const register = async (req: Request, res: Response) => {
     typeof password !== "string" ||
     typeof organizationName !== "string" ||
     typeof organizationAddress !== "string" ||
-    typeof organizationPhone !== "string"
+    typeof phoneNumber !== "string"
   ) {
     return res.status(400).json({
       message:
-        "Email, name, password, organization_name, organization_address, and organization_phone are required",
+        "Email, name, password, organization_name, organization_address, and phone_number are required",
     });
   }
 
@@ -47,7 +48,7 @@ export const register = async (req: Request, res: Response) => {
   const trimmedName = name.trim();
   const trimmedOrgName = organizationName.trim();
   const trimmedOrgAddress = organizationAddress.trim();
-  const trimmedOrgPhone = organizationPhone.trim();
+  const trimmedPhoneNumber = phoneNumber.trim();
 
   if (!EMAIL_REGEX.test(normalizedEmail)) {
     return res.status(400).json({ message: "Invalid email format" });
@@ -73,7 +74,7 @@ export const register = async (req: Request, res: Response) => {
       .json({ message: "Organization address cannot be empty" });
   }
 
-  if (!PHONE_REGEX.test(trimmedOrgPhone)) {
+  if (!PHONE_REGEX.test(trimmedPhoneNumber)) {
     return res.status(400).json({ message: "Invalid phone number format" });
   }
 
@@ -93,7 +94,6 @@ export const register = async (req: Request, res: Response) => {
         data: {
           name: trimmedOrgName,
           address: trimmedOrgAddress,
-          phone: trimmedOrgPhone,
         },
       });
 
@@ -123,6 +123,7 @@ export const register = async (req: Request, res: Response) => {
         data: {
           email: normalizedEmail,
           name: trimmedName,
+          phone_number: trimmedPhoneNumber,
           password: passwordHash,
           organization_id: organization.id,
           department_id: department.id,
@@ -132,6 +133,7 @@ export const register = async (req: Request, res: Response) => {
           id: true,
           email: true,
           name: true,
+          phone_number: true,
           organization_id: true,
           department_id: true,
           role_id: true,

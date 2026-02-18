@@ -10,7 +10,7 @@ const authRouter = Router();
  *     tags:
  *       - Auth
  *     summary: Register a new user
- *     description: Register a new user with email, name, password, organization, department, and role
+ *     description: Register a new user with email, name, password, organization name/address, and user phone number
  *     requestBody:
  *       required: true
  *       content:
@@ -23,7 +23,7 @@ const authRouter = Router();
  *               - password
  *               - organization_name
  *               - organization_address
- *               - organization_phone
+ *               - phone_number
  *             properties:
  *               email:
  *                 type: string
@@ -40,7 +40,7 @@ const authRouter = Router();
  *               organization_address:
  *                 type: string
  *                 default: 123 Main St, Jakarta
- *               organization_phone:
+ *               phone_number:
  *                 type: string
  *                 default: +62 812-3456-7890
  *     responses:
