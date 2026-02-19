@@ -57,7 +57,6 @@ const options: swaggerJsdoc.Options = {
           properties: {
             id: { type: 'integer' },
             name: { type: 'string' },
-            organization_id: { type: 'integer' },
             division_id: { type: 'integer' },
             organization: {
               type: 'object',
@@ -79,10 +78,9 @@ const options: swaggerJsdoc.Options = {
         },
         DepartmentInput: {
           type: 'object',
-          required: ['name', 'organization_id', 'division_id'],
+          required: ['name', 'division_id'],
           properties: {
             name: { type: 'string', example: 'Engineering' },
-            organization_id: { type: 'integer', example: 1 },
             division_id: { type: 'integer', example: 1 },
           },
         },
