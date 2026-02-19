@@ -69,7 +69,7 @@ export const getUserById = async (req: Request, res: Response) => {
 };
 
 /**
- * CREATE USER
+ * CREATE USER (Admin Only)
  */
 export const createUser = async (req: Request, res: Response) => {
   const { name, email, password, organization_id, department_id, role_id } =
@@ -156,7 +156,7 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 /**
- * DELETE USER
+ * DELETE USER (Admin Only)
  */
 export const deleteUser = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
