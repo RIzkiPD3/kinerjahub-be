@@ -86,6 +86,41 @@ const options: swaggerJsdoc.Options = {
             division_id: { type: 'integer', example: 1 },
           },
         },
+        Division: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            organization_id: { type: 'integer' },
+            organization: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' },
+              },
+            },
+            departments: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  name: { type: 'string' },
+                },
+              },
+            },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        DivisionInput: {
+          type: 'object',
+          required: ['name', 'organization_id'],
+          properties: {
+            name: { type: 'string', example: 'Technology' },
+            organization_id: { type: 'integer', example: 1 },
+          },
+        },
       },
     },
     security: [
