@@ -10,7 +10,7 @@ const authRouter = (0, express_1.Router)();
  *     tags:
  *       - Auth
  *     summary: Register a new user
- *     description: Register a new user with email, name, password, organization, department, and role
+ *     description: Register a new user with email, name, password, organization name/address, and user phone number
  *     requestBody:
  *       required: true
  *       content:
@@ -21,9 +21,9 @@ const authRouter = (0, express_1.Router)();
  *               - email
  *               - name
  *               - password
- *               - organization_id
- *               - department_id
- *               - role_id
+ *               - organization_name
+ *               - organization_address
+ *               - phone_number
  *             properties:
  *               email:
  *                 type: string
@@ -34,15 +34,15 @@ const authRouter = (0, express_1.Router)();
  *               password:
  *                 type: string
  *                 default: password123
- *               organization_id:
- *                 type: integer
- *                 default: 1
- *               department_id:
- *                 type: integer
- *                 default: 1
- *               role_id:
- *                 type: integer
- *                 default: 1
+ *               organization_name:
+ *                 type: string
+ *                 default: Example Corp
+ *               organization_address:
+ *                 type: string
+ *                 default: 123 Main St, Jakarta
+ *               phone_number:
+ *                 type: string
+ *                 default: +62 812-3456-7890
  *     responses:
  *       201:
  *         description: User created successfully
