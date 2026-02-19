@@ -7,19 +7,36 @@ import authRouter from "./routes/auth.routes";
 const app: Application = express();
 
 // 1. CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:3000", "http://localhost:5173"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://kinerjahub-be-production.up.railway.app", // Production URL
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : []),
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
+      // Allow requests with no origin (like Postman, mobile apps, or curl)
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Optional: Allow same-origin requests even if not explicitly in whitelist
+      // This helps when Swagger UI is served from the same domain
+      const isSameOrigin =
+        process.env.RAILWAY_STATIC_URL &&
+        origin.includes(process.env.RAILWAY_STATIC_URL);
+      if (isSameOrigin) return callback(null, true);
+
+      console.error(`CORS blocked for origin: ${origin}`);
       callback(new Error(`CORS: Origin ${origin} not allowed`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
