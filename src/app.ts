@@ -5,6 +5,7 @@ import swaggerSpec from "./utils/swagger";
 import authRouter from "./routes/auth.routes";
 import userRouter from "./routes/user.route";
 import departmentRouter from "./routes/department.route";
+import divisionRouter from "./routes/division.route";
 
 const app: Application = express();
 
@@ -51,6 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/departments", departmentRouter);
+app.use("/api/divisions", divisionRouter);
 
 // 4. Utility & Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
