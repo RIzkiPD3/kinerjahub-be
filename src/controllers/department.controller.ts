@@ -10,7 +10,6 @@ export const getAllDepartments = async (req: Request, res: Response) => {
             select: {
                 id: true,
                 name: true,
-                organization_id: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -38,7 +37,6 @@ export const getDepartmentById = async (req: Request, res: Response) => {
             select: {
                 id: true,
                 name: true,
-                organization_id: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -62,25 +60,34 @@ export const getDepartmentById = async (req: Request, res: Response) => {
  * CREATE DEPARTMENT
  */
 export const createDepartment = async (req: Request, res: Response) => {
-    const { name, organization_id, division_id } = req.body;
+    const { name, division_id } = req.body;
 
-    if (!name || !organization_id || !division_id) {
+    if (!name || !division_id) {
         return res
             .status(400)
-            .json({ message: "name, organization_id, and division_id are required" });
+            .json({ message: "name and division_id are required" });
     }
 
     try {
+        // Derive organization_id from division
+        const division = await prisma.division.findUnique({
+            where: { id: Number(division_id) },
+            select: { organization_id: true }
+        });
+
+        if (!division) {
+            return res.status(404).json({ message: "Division not found" });
+        }
+
         const department = await prisma.department.create({
             data: {
                 name,
-                organization_id: Number(organization_id),
+                organization_id: division.organization_id,
                 division_id: Number(division_id),
             },
             select: {
                 id: true,
                 name: true,
-                organization_id: true,
                 division_id: true,
                 created_at: true,
             },
@@ -98,7 +105,7 @@ export const createDepartment = async (req: Request, res: Response) => {
  */
 export const updateDepartment = async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const { name, organization_id, division_id } = req.body;
+    const { name, division_id } = req.body;
 
     try {
         const existing = await prisma.department.findUnique({ where: { id } });
@@ -107,17 +114,31 @@ export const updateDepartment = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Department not found" });
         }
 
+        let organization_id = undefined;
+        if (division_id) {
+            const division = await prisma.division.findUnique({
+                where: { id: Number(division_id) },
+                select: { organization_id: true }
+            });
+
+            if (!division) {
+                return res.status(404).json({ message: "Division not found" });
+            }
+            organization_id = division.organization_id;
+        }
+
         const updated = await prisma.department.update({
             where: { id },
             data: {
                 ...(name && { name }),
-                ...(organization_id && { organization_id: Number(organization_id) }),
-                ...(division_id && { division_id: Number(division_id) }),
+                ...(division_id && {
+                    division_id: Number(division_id),
+                    organization_id: organization_id
+                }),
             },
             select: {
                 id: true,
                 name: true,
-                organization_id: true,
                 division_id: true,
                 updated_at: true,
             },
