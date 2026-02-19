@@ -1,9 +1,12 @@
 import express from "express";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./utils/swagger";
 import authRouter from "./routes/auth.routes";
 
 const app = express();
 
+// 1. CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : ["http://localhost:3000", "http://localhost:5173"];
@@ -11,7 +14,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile apps)
+      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: Origin ${origin} not allowed`));
@@ -19,35 +22,25 @@ app.use(
     credentials: true,
   })
 );
-// Body parsers - Must be registered before routes
+
+// 2. Body Parser Middleware - CRITICAL: Must be BEFORE routes
+// Ref: https://expressjs.com/en/api.html#express.json
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 3. API Routes
 app.use("/api/auth", authRouter);
 
-import swaggerUi from "swagger-ui-express";
-import swaggerSpec from "./utils/swagger";
-
-// Swagger UI
+// 4. Utility Routes
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Health check endpoint
 app.get("/health", async (req, res) => {
-  try {
-    // Optional: Test database connection
-    // await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({
-      status: "OK",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || "development",
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: "ERROR",
-      message: "Service unavailable",
-    });
-  }
+  res.status(200).json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
 app.get("/", (req, res) => {
