@@ -19,7 +19,10 @@ app.use(
     credentials: true,
   })
 );
+// Body parsers - Must be registered before routes
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use("/api/auth", authRouter);
 
 import swaggerUi from "swagger-ui-express";

@@ -21,7 +21,9 @@ app.use((0, cors_1.default)({
     },
     credentials: true,
 }));
+// Body parsers - Must be registered before routes
 app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
 app.use("/api/auth", auth_routes_1.default);
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_1 = __importDefault(require("./utils/swagger"));
