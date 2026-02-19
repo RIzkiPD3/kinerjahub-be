@@ -147,7 +147,7 @@ export const register = async (req: Request, res: Response) => {
       message: "Register success",
       data: result,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
@@ -223,7 +223,7 @@ export const login = async (req: Request, res: Response) => {
         role: user.role.name,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Login error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
