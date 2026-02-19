@@ -25,14 +25,15 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 // 2. Body Parser Middleware - CRITICAL: Must be BEFORE routes
-// Ref: https://expressjs.com/en/api.html#express.json
+// Standard body-parsers for JSON and form-data
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // 3. API Routes
 app.use("/api/auth", auth_routes_1.default);
-// 4. Utility Routes
+// 4. Utility & Documentation
 app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
-app.get("/health", async (req, res) => {
+// Health check endpoint
+app.get("/health", (req, res) => {
     res.status(200).json({
         status: "OK",
         timestamp: new Date().toISOString(),

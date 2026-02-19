@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Application } from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./utils/swagger";
 import authRouter from "./routes/auth.routes";
 
-const app = express();
+const app: Application = express();
 
 // 1. CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -24,17 +24,18 @@ app.use(
 );
 
 // 2. Body Parser Middleware - CRITICAL: Must be BEFORE routes
-// Ref: https://expressjs.com/en/api.html#express.json
+// Standard body-parsers for JSON and form-data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 3. API Routes
 app.use("/api/auth", authRouter);
 
-// 4. Utility Routes
+// 4. Utility & Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.get("/health", async (req, res) => {
+// Health check endpoint
+app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
