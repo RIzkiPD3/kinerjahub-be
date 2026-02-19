@@ -17,6 +17,76 @@ const options: swaggerJsdoc.Options = {
           bearerFormat: 'JWT',
         },
       },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            email: { type: 'string' },
+            phone_number: { type: 'string' },
+            organization_id: { type: 'integer' },
+            department_id: { type: 'integer' },
+            role_id: { type: 'integer' },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        RegisterInput: {
+          type: 'object',
+          required: ['email', 'name', 'password', 'organization_name', 'organization_address', 'phone_number'],
+          properties: {
+            email: { type: 'string', default: 'user@example.com' },
+            name: { type: 'string', default: 'John Doe' },
+            password: { type: 'string', default: 'password123' },
+            organization_name: { type: 'string', default: 'Example Corp' },
+            organization_address: { type: 'string', default: '123 Main St, Jakarta' },
+            phone_number: { type: 'string', default: '+6281234567890' },
+          },
+        },
+        LoginInput: {
+          type: 'object',
+          required: ['email', 'password'],
+          properties: {
+            email: { type: 'string', default: 'user@example.com' },
+            password: { type: 'string', default: 'password123' },
+          },
+        },
+        Department: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            organization_id: { type: 'integer' },
+            division_id: { type: 'integer' },
+            organization: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' },
+              },
+            },
+            division: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' },
+              },
+            },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+          },
+        },
+        DepartmentInput: {
+          type: 'object',
+          required: ['name', 'organization_id', 'division_id'],
+          properties: {
+            name: { type: 'string', example: 'Engineering' },
+            organization_id: { type: 'integer', example: 1 },
+            division_id: { type: 'integer', example: 1 },
+          },
+        },
+      },
     },
     security: [
       {

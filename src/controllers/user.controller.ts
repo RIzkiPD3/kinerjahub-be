@@ -72,8 +72,15 @@ export const getUserById = async (req: Request, res: Response) => {
  * CREATE USER (Admin Only)
  */
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email, password, organization_id, department_id, role_id } =
-    req.body;
+  const {
+    name,
+    email,
+    password,
+    phone_number,
+    organization_id,
+    department_id,
+    role_id,
+  } = req.body;
 
   try {
     const existing = await prisma.user.findUnique({
@@ -90,6 +97,7 @@ export const createUser = async (req: Request, res: Response) => {
       data: {
         name,
         email,
+        phone_number,
         password: hashedPassword,
         organization_id,
         department_id,
