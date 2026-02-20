@@ -16,33 +16,7 @@ const authRouter = (0, express_1.Router)();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - name
- *               - password
- *               - organization_name
- *               - organization_address
- *               - phone_number
- *             properties:
- *               email:
- *                 type: string
- *                 default: user@example.com
- *               name:
- *                 type: string
- *                 default: John Doe
- *               password:
- *                 type: string
- *                 default: password123
- *               organization_name:
- *                 type: string
- *                 default: Example Corp
- *               organization_address:
- *                 type: string
- *                 default: 123 Main St, Jakarta
- *               phone_number:
- *                 type: string
- *                 default: +62 812-3456-7890
+ *             $ref: '#/components/schemas/RegisterInput'
  *     responses:
  *       201:
  *         description: User created successfully
@@ -67,17 +41,7 @@ authRouter.post("/register", auth_controller_1.register);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 default: user@example.com
- *               password:
- *                 type: string
- *                 default: password123
+ *             $ref: '#/components/schemas/LoginInput'
  *     responses:
  *       200:
  *         description: Login success

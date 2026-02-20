@@ -11,7 +11,8 @@ export const registerUser = async (
     phone_number: string,
     organization_id: number,
     department_id: number,
-    role_id: number
+    role_id: number,
+    division_id: number
 ) => {
     const existingUser = await prisma.user.findUnique({
         where: { email },
@@ -32,6 +33,7 @@ export const registerUser = async (
             organization_id,
             department_id,
             role_id,
+            division_id,
         },
     });
 

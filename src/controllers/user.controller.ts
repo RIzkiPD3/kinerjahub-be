@@ -72,15 +72,6 @@ export const getUserById = async (req: Request, res: Response) => {
  * CREATE USER (Admin Only)
  */
 export const createUser = async (req: Request, res: Response) => {
-  const { 
-    name, 
-    email, 
-    password, 
-    phone_number,
-    organization_id, 
-    department_id, 
-    division_id,
-    role_id 
   const {
     name,
     email,
@@ -88,6 +79,7 @@ export const createUser = async (req: Request, res: Response) => {
     phone_number,
     organization_id,
     department_id,
+    division_id,
     role_id,
   } = req.body;
 
