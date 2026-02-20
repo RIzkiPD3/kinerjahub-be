@@ -81,6 +81,14 @@ export const createUser = async (req: Request, res: Response) => {
     department_id, 
     division_id,
     role_id 
+  const {
+    name,
+    email,
+    password,
+    phone_number,
+    organization_id,
+    department_id,
+    role_id,
   } = req.body;
 
   try {
