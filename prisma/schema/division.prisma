@@ -11,4 +11,5 @@ model Division {
 
     @@index([organization_id])
     @@map("divisions")
+    users User[]
 }
