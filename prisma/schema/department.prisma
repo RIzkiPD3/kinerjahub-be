@@ -1,7 +1,7 @@
 model Department {
-  id              Int          @id @default(autoincrement())
-  organization_id Int          @map("organization_id")
-  division_id     Int          @map("division_id")
+  id              String       @id @default(uuid())
+  organization_id String       @map("organization_id")
+  division_id     String       @map("division_id")
   name            String
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")

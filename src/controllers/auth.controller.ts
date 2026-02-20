@@ -202,9 +202,9 @@ export const login = async (req: Request, res: Response) => {
  * GET USER BY ID
  */
 export const getUserById = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
+  const { id } = req.params;
 
-  if (isNaN(id)) {
+  if (!id) {
     return res.status(400).json({ message: "Invalid user ID" });
   }
 
@@ -230,9 +230,9 @@ export const getUserById = async (req: Request, res: Response) => {
  * DELETE USER
  */
 export const deleteUser = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
+  const { id } = req.params;
 
-  if (isNaN(id)) {
+  if (!id) {
     return res.status(400).json({ message: "Invalid user ID" });
   }
 

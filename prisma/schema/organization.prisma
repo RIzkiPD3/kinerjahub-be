@@ -1,5 +1,5 @@
 model Organization {
-  id          Int          @id @default(autoincrement())
+  id          String       @id @default(uuid())
   name        String
   created_at  DateTime     @default(now()) @map("created_at")
   updated_at  DateTime     @updatedAt @map("updated_at")

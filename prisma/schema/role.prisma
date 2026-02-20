@@ -1,6 +1,6 @@
 model Role {
-  id              Int          @id @default(autoincrement())
-  organization_id Int          @map("organization_id")
+  id              String       @id @default(uuid())
+  organization_id String       @map("organization_id")
   name            String
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")

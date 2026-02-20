@@ -1,14 +1,14 @@
 model Task {
-  id              Int          @id @default(autoincrement())
-  organization_id Int          @map("organization_id")
-  department_id   Int          @map("department_id")
+  id              String       @id @default(uuid())
+  organization_id String       @map("organization_id")
+  department_id   String       @map("department_id")
   title           String
   description     String?
   status          TaskStatus   @default(TO_DO)
   story_point     Int          @map("story_point")
   deadline        DateTime     @db.Date
-  created_by      Int          @map("created_by")
-  assigned_to     Int          @map("assigned_to")
+  created_by      String       @map("created_by")
+  assigned_to     String       @map("assigned_to")
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")
   task_logs       TaskLog[]

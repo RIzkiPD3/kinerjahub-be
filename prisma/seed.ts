@@ -18,10 +18,10 @@ async function main() {
     console.log("Seeding data...");
 
     const organization = await prisma.organization.upsert({
-        where: { id: 1 },
+        where: { id: "default-org-id" }, // Using a fixed string for seeding consistency if needed, or just specific name
         update: {},
         create: {
-            id: 1,
+            id: "default-org-id",
             name: "Default Organization",
             address: "Default Address",
             phone: "08123456789",
@@ -29,20 +29,20 @@ async function main() {
     });
 
     const division = await prisma.division.upsert({
-        where: { id: 1 },
+        where: { id: "default-division-id" },
         update: {},
         create: {
-            id: 1,
+            id: "default-division-id",
             name: "Default Division",
             organization_id: organization.id,
         },
     });
 
     const department = await prisma.department.upsert({
-        where: { id: 1 },
+        where: { id: "default-dept-id" },
         update: {},
         create: {
-            id: 1,
+            id: "default-dept-id",
             name: "Default Department",
             organization_id: organization.id,
             division_id: division.id,
@@ -50,10 +50,10 @@ async function main() {
     });
 
     const role = await prisma.role.upsert({
-        where: { id: 1 },
+        where: { id: "default-role-id" },
         update: {},
         create: {
-            id: 1,
+            id: "default-role-id",
             name: "Admin",
             organization_id: organization.id,
         },
@@ -77,14 +77,6 @@ async function main() {
         },
     });
 
-    // Sync sequences for PostgreSQL to avoid P2002 after manual ID inserts
-    console.log("Syncing sequences...");
-    const tables = ["organizations", "divisions", "departments", "roles", "users"];
-    for (const table of tables) {
-        await prisma.$executeRawUnsafe(
-            `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id),0) + 1, false) FROM "${table}";`
-        );
-    }
 
     console.log({ organization, division, department, role });
     console.log("\n✅ Admin account created:");

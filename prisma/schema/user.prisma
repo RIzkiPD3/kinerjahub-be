@@ -1,16 +1,15 @@
 model User {
-    id              Int      @id @default(autoincrement())
-    organization_id Int      @map("organization_id")
-    department_id   Int      @map("department_id")
-    role_id         Int      @map("role_id")
+    id              String   @id @default(uuid())
+    organization_id String   @map("organization_id")
+    department_id   String   @map("department_id")
+    role_id         String   @map("role_id")
     name            String
     phone_number    String   @map("phone_number")
     email           String   @unique
     password        String
     created_at      DateTime @default(now()) @map("created_at")
     updated_at      DateTime @updatedAt @map("updated_at")
-    division_id     Int   @map("division_id")
-
+    division_id     String   @map("division_id")
 
     // Relations
     organization   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -20,11 +19,10 @@ model User {
     assigned_tasks Task[]       @relation("TaskAssignedTo")
     task_logs      TaskLog[]
     attendances    Attendance[]
-    division Division @relation(fields: [division_id], references: [id], onDelete: Cascade)
+    division       Division     @relation(fields: [division_id], references: [id], onDelete: Cascade)
 
     @@index([organization_id])
     @@index([department_id])
     @@index([role_id])
     @@map("users")
 }
-        

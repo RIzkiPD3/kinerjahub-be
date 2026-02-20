@@ -1,8 +1,8 @@
 model TaskLog {
-  id              Int          @id @default(autoincrement())
-  organization_id Int          @map("organization_id")
-  task_id         Int          @map("task_id")
-  user_id         Int          @map("user_id")
+  id              String       @id @default(uuid())
+  organization_id String       @map("organization_id")
+  task_id         String       @map("task_id")
+  user_id         String       @map("user_id")
   activity        String
   old_status      TaskStatus?  @map("old_status")
   new_status      TaskStatus?  @map("new_status")
