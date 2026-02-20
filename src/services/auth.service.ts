@@ -8,6 +8,7 @@ export const registerUser = async (
     name: string,
     email: string,
     password: string,
+    phone_number: string,
     organization_id: number,
     department_id: number,
     role_id: number
@@ -27,6 +28,7 @@ export const registerUser = async (
             name,
             email,
             password: hashedPassword,
+            phone_number,
             organization_id,
             department_id,
             role_id,

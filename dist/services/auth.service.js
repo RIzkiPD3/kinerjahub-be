@@ -8,7 +8,7 @@ const prisma_1 = __importDefault(require("../lib/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const JWT_SECRET = process.env.JWT_SECRET;
-const registerUser = async (name, email, password, organization_id, department_id, role_id) => {
+const registerUser = async (name, email, password, phone_number, organization_id, department_id, role_id) => {
     const existingUser = await prisma_1.default.user.findUnique({
         where: { email },
     });
@@ -21,6 +21,7 @@ const registerUser = async (name, email, password, organization_id, department_i
             name,
             email,
             password: hashedPassword,
+            phone_number,
             organization_id,
             department_id,
             role_id,
