@@ -77,6 +77,15 @@ async function main() {
         },
     });
 
+    // Sync sequences for PostgreSQL to avoid P2002 after manual ID inserts
+    console.log("Syncing sequences...");
+    const tables = ["organizations", "divisions", "departments", "roles", "users"];
+    for (const table of tables) {
+        await prisma.$executeRawUnsafe(
+            `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id),0) + 1, false) FROM "${table}";`
+        );
+    }
+
     console.log({ organization, division, department, role });
     console.log("\n✅ Admin account created:");
     console.log("   Email    : admin@kinerjahub.com");
