@@ -9,8 +9,7 @@ model User {
     password        String
     created_at      DateTime @default(now()) @map("created_at")
     updated_at      DateTime @updatedAt @map("updated_at")
-    phone_number String
-    division_id Int   @map("division_id")
+    division_id     Int   @map("division_id")
 
 
     // Relations
