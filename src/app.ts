@@ -13,6 +13,7 @@ const app: Application = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://kinerjahub-be-production.up.railway.app", // Production URL
   ...(process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
@@ -25,16 +26,24 @@ app.use(
       // Allow requests with no origin (like Postman, mobile apps, or curl)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Normalize origin: remove trailing slash for comparison
+      const normalizedOrigin = origin.replace(/\/$/, "");
+
+      if (
+        allowedOrigins.some(
+          (allowed) => allowed.replace(/\/$/, "") === normalizedOrigin
+        )
+      ) {
+        return callback(null, true);
+      }
 
       // Optional: Allow same-origin requests even if not explicitly in whitelist
-      // This helps when Swagger UI is served from the same domain
       const isSameOrigin =
         process.env.RAILWAY_STATIC_URL &&
-        origin.includes(process.env.RAILWAY_STATIC_URL);
+        normalizedOrigin.includes(process.env.RAILWAY_STATIC_URL);
       if (isSameOrigin) return callback(null, true);
 
-      console.error(`CORS blocked for origin: ${origin}`);
+      console.error(`[CORS Blocked] Origin: ${origin}`);
       callback(new Error(`CORS: Origin ${origin} not allowed`));
     },
     credentials: true,

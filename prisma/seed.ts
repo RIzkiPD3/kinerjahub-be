@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -58,8 +59,29 @@ async function main() {
         },
     });
 
+    // Create admin user
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+
+    const adminUser = await prisma.user.upsert({
+        where: { email: "admin@kinerjahub.com" },
+        update: {},
+        create: {
+            email: "admin@kinerjahub.com",
+            name: "Admin KinerjaHub",
+            password: hashedPassword,
+            phone_number: "08123456789",
+            organization_id: organization.id,
+            division_id: division.id,
+            department_id: department.id,
+            role_id: role.id,
+        },
+    });
+
     console.log({ organization, division, department, role });
-    console.log("Seeding finished.");
+    console.log("\n✅ Admin account created:");
+    console.log("   Email    : admin@kinerjahub.com");
+    console.log("   Password : admin123");
+    console.log("\nSeeding finished.");
 }
 
 main()
