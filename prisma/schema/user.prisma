@@ -8,6 +8,9 @@ model User {
     password        String
     created_at      DateTime @default(now()) @map("created_at")
     updated_at      DateTime @updatedAt @map("updated_at")
+    phone_number String
+    division_id Int   @map("division_id")
+
 
     // Relations
     organization   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -17,6 +20,7 @@ model User {
     assigned_tasks Task[]       @relation("TaskAssignedTo")
     task_logs      TaskLog[]
     attendances    Attendance[]
+    division Division @relation(fields: [division_id], references: [id], onDelete: Cascade)
 
     @@index([organization_id])
     @@index([department_id])
