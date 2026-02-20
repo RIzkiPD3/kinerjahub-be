@@ -40,10 +40,10 @@ exports.getAllUsers = getAllUsers;
  * GET USER BY ID
  */
 const getUserById = async (req, res) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     try {
         const user = await prisma_1.default.user.findUnique({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
             select: {
                 id: true,
                 name: true,
@@ -112,11 +112,11 @@ exports.createUser = createUser;
  * UPDATE USER
  */
 const updateUser = async (req, res) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const { name, email, password, role_id } = req.body;
     try {
         const existing = await prisma_1.default.user.findUnique({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
         });
         if (!existing) {
             return res.status(404).json({ message: "User not found" });
@@ -126,7 +126,7 @@ const updateUser = async (req, res) => {
             hashedPassword = await bcrypt_1.default.hash(password, SALT_ROUNDS);
         }
         const updated = await prisma_1.default.user.update({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
             data: {
                 name,
                 email,
@@ -152,10 +152,10 @@ exports.updateUser = updateUser;
  * DELETE USER (Admin Only)
  */
 const deleteUser = async (req, res) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     try {
         await prisma_1.default.user.delete({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
         });
         return res.status(200).json({ message: "User deleted successfully" });
     }

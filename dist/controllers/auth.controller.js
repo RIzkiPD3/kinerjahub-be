@@ -172,13 +172,13 @@ exports.login = login;
  * GET USER BY ID
  */
 const getUserById = async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ message: "Invalid user ID" });
     }
     try {
         const user = await prisma_1.default.user.findUnique({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
             include: { role: true },
         });
         if (!user) {
@@ -197,18 +197,20 @@ exports.getUserById = getUserById;
  * DELETE USER
  */
 const deleteUser = async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ message: "Invalid user ID" });
     }
     try {
         // Check if user exists before deleting
-        const existing = await prisma_1.default.user.findUnique({ where: { id } });
+        const existing = await prisma_1.default.user.findUnique({
+            where: { id: Array.isArray(id) ? id[0] : id },
+        });
         if (!existing) {
             return res.status(404).json({ message: "User not found" });
         }
         await prisma_1.default.user.delete({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
         });
         return res.status(200).json({ message: "User deleted successfully" });
     }

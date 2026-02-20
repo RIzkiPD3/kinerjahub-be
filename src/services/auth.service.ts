@@ -9,10 +9,10 @@ export const registerUser = async (
     email: string,
     password: string,
     phone_number: string,
-    organization_id: number,
-    department_id: number,
-    role_id: number,
-    division_id: number
+    organization_id: string,
+    department_id: string,
+    role_id: string,
+    division_id: string
 ) => {
     const existingUser = await prisma.user.findUnique({
         where: { email },

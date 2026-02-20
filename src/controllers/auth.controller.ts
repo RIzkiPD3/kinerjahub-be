@@ -210,7 +210,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
       include: { role: true },
     });
 
@@ -238,13 +238,15 @@ export const deleteUser = async (req: Request, res: Response) => {
 
   try {
     // Check if user exists before deleting
-    const existing = await prisma.user.findUnique({ where: { id } });
+    const existing = await prisma.user.findUnique({
+      where: { id: Array.isArray(id) ? id[0] : id },
+    });
     if (!existing) {
       return res.status(404).json({ message: "User not found" });
     }
 
     await prisma.user.delete({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
     });
 
     return res.status(200).json({ message: "User deleted successfully" });

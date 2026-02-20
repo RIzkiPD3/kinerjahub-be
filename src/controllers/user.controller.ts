@@ -37,11 +37,11 @@ export const getAllUsers = async (req: Request, res: Response) => {
  * GET USER BY ID
  */
 export const getUserById = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
+  const { id } = req.params;
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
       select: {
         id: true,
         name: true,
@@ -124,12 +124,12 @@ export const createUser = async (req: Request, res: Response) => {
  * UPDATE USER
  */
 export const updateUser = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
+  const { id } = req.params;
   const { name, email, password, role_id } = req.body;
 
   try {
     const existing = await prisma.user.findUnique({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
     });
 
     if (!existing) {
@@ -143,7 +143,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     const updated = await prisma.user.update({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
       data: {
         name,
         email,
@@ -169,11 +169,11 @@ export const updateUser = async (req: Request, res: Response) => {
  * DELETE USER (Admin Only)
  */
 export const deleteUser = async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
+  const { id } = req.params;
 
   try {
     await prisma.user.delete({
-      where: { id },
+      where: { id: Array.isArray(id) ? id[0] : id },
     });
 
     return res.status(200).json({ message: "User deleted successfully" });

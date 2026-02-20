@@ -29,11 +29,11 @@ export const getAllDepartments = async (req: Request, res: Response) => {
  * GET DEPARTMENT BY ID
  */
 export const getDepartmentById = async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
 
     try {
         const department = await prisma.department.findUnique({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
             select: {
                 id: true,
                 name: true,
@@ -71,7 +71,7 @@ export const createDepartment = async (req: Request, res: Response) => {
     try {
         // Derive organization_id from division
         const division = await prisma.division.findUnique({
-            where: { id: Number(division_id) },
+            where: { id: division_id },
             select: { organization_id: true }
         });
 
@@ -83,7 +83,7 @@ export const createDepartment = async (req: Request, res: Response) => {
             data: {
                 name,
                 organization_id: division.organization_id,
-                division_id: Number(division_id),
+                division_id: division_id,
             },
             select: {
                 id: true,
@@ -104,11 +104,13 @@ export const createDepartment = async (req: Request, res: Response) => {
  * UPDATE DEPARTMENT
  */
 export const updateDepartment = async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
     const { name, division_id } = req.body;
 
     try {
-        const existing = await prisma.department.findUnique({ where: { id } });
+        const existing = await prisma.department.findUnique({
+            where: { id: Array.isArray(id) ? id[0] : id }
+        });
 
         if (!existing) {
             return res.status(404).json({ message: "Department not found" });
@@ -117,7 +119,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
         let organization_id = undefined;
         if (division_id) {
             const division = await prisma.division.findUnique({
-                where: { id: Number(division_id) },
+                where: { id: division_id },
                 select: { organization_id: true }
             });
 
@@ -128,11 +130,11 @@ export const updateDepartment = async (req: Request, res: Response) => {
         }
 
         const updated = await prisma.department.update({
-            where: { id },
+            where: { id: Array.isArray(id) ? id[0] : id },
             data: {
                 ...(name && { name }),
                 ...(division_id && {
-                    division_id: Number(division_id),
+                    division_id: division_id,
                     organization_id: organization_id
                 }),
             },
@@ -155,16 +157,20 @@ export const updateDepartment = async (req: Request, res: Response) => {
  * DELETE DEPARTMENT
  */
 export const deleteDepartment = async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = req.params;
 
     try {
-        const existing = await prisma.department.findUnique({ where: { id } });
+        const existing = await prisma.department.findUnique({
+            where: { id: Array.isArray(id) ? id[0] : id }
+        });
 
         if (!existing) {
             return res.status(404).json({ message: "Department not found" });
         }
 
-        await prisma.department.delete({ where: { id } });
+        await prisma.department.delete({
+            where: { id: Array.isArray(id) ? id[0] : id }
+        });
 
         return res.status(200).json({ message: "Department deleted successfully" });
     } catch (error) {
