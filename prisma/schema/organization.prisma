@@ -1,19 +1,17 @@
 model Organization {
-    id         Int      @id @default(autoincrement())
-    name       String
-    address    String
-    phone      String?
-    created_at DateTime @default(now()) @map("created_at")
-    updated_at DateTime @updatedAt @map("updated_at")
+  id          Int          @id @default(autoincrement())
+  name        String
+  created_at  DateTime     @default(now()) @map("created_at")
+  updated_at  DateTime     @updatedAt @map("updated_at")
+  address     String
+  phone       String?
+  attendances Attendance[]
+  departments Department[]
+  divisions   Division[]
+  roles       Role[]
+  task_logs   TaskLog[]
+  tasks       Task[]
+  users       User[]
 
-    // Relations
-    divisions   Division[]
-    departments Department[]
-    roles       Role[]
-    users       User[]
-    tasks       Task[]
-    task_logs   TaskLog[]
-    attendances Attendance[]
-
-    @@map("organizations")
+  @@map("organizations")
 }

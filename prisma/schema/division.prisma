@@ -1,15 +1,12 @@
 model Division {
-    id              Int      @id @default(autoincrement())
-    organization_id Int      @map("organization_id")
-    name            String
-    created_at      DateTime @default(now()) @map("created_at")
-    updated_at      DateTime @updatedAt @map("updated_at")
+  id              Int          @id @default(autoincrement())
+  organization_id Int          @map("organization_id")
+  name            String
+  created_at      DateTime     @default(now()) @map("created_at")
+  updated_at      DateTime     @updatedAt @map("updated_at")
+  departments     Department[]
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
-    // Relations
-    organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-    departments  Department[]
-
-    @@index([organization_id])
-    @@map("divisions")
-    users User[]
+  @@index([organization_id])
+  @@map("divisions")
 }
