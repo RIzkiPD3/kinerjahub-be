@@ -1,28 +1,26 @@
 model User {
-    id              String   @id @default(uuid())
-    organization_id String   @map("organization_id")
-    department_id   String   @map("department_id")
-    role_id         String   @map("role_id")
-    name            String
-    phone_number    String   @map("phone_number")
-    email           String   @unique
-    password        String
-    created_at      DateTime @default(now()) @map("created_at")
-    updated_at      DateTime @updatedAt @map("updated_at")
-    division_id     String   @map("division_id")
+  id              String       @id @default(uuid())
+  organization_id String       @map("organization_id")
+  department_id   String       @map("department_id")
+  role_id         String       @map("role_id")
+  name            String
+  phone_number    String       @map("phone_number")
+  email           String       @unique
+  password        String
+  created_at      DateTime     @default(now()) @map("created_at")
+  updated_at      DateTime     @updatedAt @map("updated_at")
+  division_id     String       @map("division_id")
+  attendances     Attendance[]
+  task_logs       TaskLog[]
+  assigned_tasks  Task[]       @relation("TaskAssignedTo")
+  created_tasks   Task[]       @relation("TaskCreatedBy")
+  department      Department   @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  division        Division     @relation(fields: [division_id], references: [id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  role            Role         @relation(fields: [role_id], references: [id], onDelete: Cascade)
 
-    // Relations
-    organization   Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-    department     Department   @relation(fields: [department_id], references: [id], onDelete: Cascade)
-    role           Role         @relation(fields: [role_id], references: [id], onDelete: Cascade)
-    created_tasks  Task[]       @relation("TaskCreatedBy")
-    assigned_tasks Task[]       @relation("TaskAssignedTo")
-    task_logs      TaskLog[]
-    attendances    Attendance[]
-    division       Division     @relation(fields: [division_id], references: [id], onDelete: Cascade)
-
-    @@index([organization_id])
-    @@index([department_id])
-    @@index([role_id])
-    @@map("users")
+  @@index([organization_id])
+  @@index([department_id])
+  @@index([role_id])
+  @@map("users")
 }
