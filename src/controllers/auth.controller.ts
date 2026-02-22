@@ -128,11 +128,30 @@ export const register = async (req: Request, res: Response) => {
       });
     });
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET is not defined");
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role?.name,
+        organization_id: user.organization_id,
+      },
+      jwtSecret,
+      { expiresIn: "1d" }
+    );
+
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(201).json({
       message: "Register success",
-      user: userWithoutPassword,
+      data: {
+        token,
+        user: userWithoutPassword,
+      },
     });
   } catch (error: unknown) {
     console.error("Register error:", error);
@@ -178,6 +197,7 @@ export const login = async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         role: user.role?.name,
+        organization_id: user.organization_id,
       },
       jwtSecret,
       { expiresIn: "1d" }

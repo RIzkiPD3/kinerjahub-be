@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthRequest } from "../middleware/auth.middleware";
 import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
 
@@ -7,15 +8,36 @@ const SALT_ROUNDS = 10;
 /**
  * GET ALL USERS (Admin Only)
  */
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: AuthRequest, res: Response) => {
   try {
+    const organization_id = req.user?.organization_id;
+
+    if (!organization_id) {
+      return res.status(401).json({ message: "Unauthorized - Organization not found" });
+    }
+
     const users = await prisma.user.findMany({
+      where: {
+        organization_id,
+      },
       select: {
         id: true,
         name: true,
         email: true,
+        phone_number: true,
         organization_id: true,
-        department_id: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        division: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         role: {
           select: {
             id: true,
@@ -36,18 +58,39 @@ export const getAllUsers = async (req: Request, res: Response) => {
 /**
  * GET USER BY ID
  */
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: Array.isArray(id) ? id[0] : id },
+    const organization_id = req.user?.organization_id;
+
+    if (!organization_id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        id: Array.isArray(id) ? id[0] : id,
+        organization_id
+      },
       select: {
         id: true,
         name: true,
         email: true,
+        phone_number: true,
         organization_id: true,
-        department_id: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        division: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         role: {
           select: {
             id: true,
@@ -123,13 +166,24 @@ export const createUser = async (req: Request, res: Response) => {
 /**
  * UPDATE USER
  */
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { name, email, password, role_id } = req.body;
+  const { name, email, password, department_id, division_id, role_id } = req.body;
 
   try {
-    const existing = await prisma.user.findUnique({
-      where: { id: Array.isArray(id) ? id[0] : id },
+    const organization_id = req.user?.organization_id;
+
+    if (!organization_id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = Array.isArray(id) ? id[0] : id;
+
+    const existing = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        organization_id
+      },
     });
 
     if (!existing) {
@@ -143,18 +197,39 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     const updated = await prisma.user.update({
-      where: { id: Array.isArray(id) ? id[0] : id },
+      where: { id: userId },
       data: {
         name,
         email,
         password: hashedPassword,
+        department_id,
+        division_id,
         role_id,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        role_id: true,
+        phone_number: true,
+        organization_id: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        division: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        role: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
