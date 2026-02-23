@@ -12,13 +12,32 @@ const SALT_ROUNDS = 10;
  */
 const getAllUsers = async (req, res) => {
     try {
+        const organization_id = req.user?.organization_id;
+        if (!organization_id) {
+            return res.status(401).json({ message: "Unauthorized - Organization not found" });
+        }
         const users = await prisma_1.default.user.findMany({
+            where: {
+                organization_id,
+            },
             select: {
                 id: true,
                 name: true,
                 email: true,
+                phone_number: true,
                 organization_id: true,
-                department_id: true,
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                division: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
                 role: {
                     select: {
                         id: true,
@@ -42,14 +61,33 @@ exports.getAllUsers = getAllUsers;
 const getUserById = async (req, res) => {
     const { id } = req.params;
     try {
-        const user = await prisma_1.default.user.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id },
+        const organization_id = req.user?.organization_id;
+        if (!organization_id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const user = await prisma_1.default.user.findFirst({
+            where: {
+                id: Array.isArray(id) ? id[0] : id,
+                organization_id
+            },
             select: {
                 id: true,
                 name: true,
                 email: true,
+                phone_number: true,
                 organization_id: true,
-                department_id: true,
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                division: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
                 role: {
                     select: {
                         id: true,
@@ -113,10 +151,18 @@ exports.createUser = createUser;
  */
 const updateUser = async (req, res) => {
     const { id } = req.params;
-    const { name, email, password, role_id } = req.body;
+    const { name, email, password, department_id, division_id, role_id } = req.body;
     try {
-        const existing = await prisma_1.default.user.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id },
+        const organization_id = req.user?.organization_id;
+        if (!organization_id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const userId = Array.isArray(id) ? id[0] : id;
+        const existing = await prisma_1.default.user.findFirst({
+            where: {
+                id: userId,
+                organization_id
+            },
         });
         if (!existing) {
             return res.status(404).json({ message: "User not found" });
@@ -126,18 +172,39 @@ const updateUser = async (req, res) => {
             hashedPassword = await bcrypt_1.default.hash(password, SALT_ROUNDS);
         }
         const updated = await prisma_1.default.user.update({
-            where: { id: Array.isArray(id) ? id[0] : id },
+            where: { id: userId },
             data: {
                 name,
                 email,
                 password: hashedPassword,
+                department_id,
+                division_id,
                 role_id,
             },
             select: {
                 id: true,
                 name: true,
                 email: true,
-                role_id: true,
+                phone_number: true,
+                organization_id: true,
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                division: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                role: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
             },
         });
         return res.status(200).json(updated);

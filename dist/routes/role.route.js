@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { createRole, deleteRole, getAllRoles, getRoleById, updateRole } from "../controllers/role.controller";
-import { verifyToken } from "../middleware/auth.middleware";
-
-const router = Router();
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const role_controller_1 = require("../controllers/role.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
 /**
  * @openapi
  * /api/roles:
@@ -43,9 +43,8 @@ const router = Router();
  *       401:
  *         description: Unauthorized
  */
-router.get("/", verifyToken, getAllRoles);
-router.post("/", verifyToken, createRole);
-
+router.get("/", auth_middleware_1.verifyToken, role_controller_1.getAllRoles);
+router.post("/", auth_middleware_1.verifyToken, role_controller_1.createRole);
 /**
  * @openapi
  * /api/roles/{id}:
@@ -103,8 +102,7 @@ router.post("/", verifyToken, createRole);
  *       404:
  *         description: Role not found
  */
-router.get("/:id", verifyToken, getRoleById);
-router.patch("/:id", verifyToken, updateRole);
-router.delete("/:id", verifyToken, deleteRole);
-
-export default router;
+router.get("/:id", auth_middleware_1.verifyToken, role_controller_1.getRoleById);
+router.patch("/:id", auth_middleware_1.verifyToken, role_controller_1.updateRole);
+router.delete("/:id", auth_middleware_1.verifyToken, role_controller_1.deleteRole);
+exports.default = router;

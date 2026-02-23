@@ -1,19 +1,20 @@
-import { Response } from "express";
-import { AuthRequest } from "../middleware/auth.middleware";
-import prisma from "../lib/prisma";
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.deleteRole = exports.updateRole = exports.createRole = exports.getRoleById = exports.getAllRoles = void 0;
+const prisma_1 = __importDefault(require("../lib/prisma"));
 /**
  * GET ALL ROLES
  */
-export const getAllRoles = async (req: AuthRequest, res: Response) => {
+const getAllRoles = async (req, res) => {
     try {
         const organization_id = req.user?.organization_id;
-
         if (!organization_id) {
             return res.status(401).json({ message: "Unauthorized - Organization not found" });
         }
-
-        const roles = await prisma.role.findMany({
+        const roles = await prisma_1.default.role.findMany({
             where: {
                 organization_id,
             },
@@ -26,27 +27,25 @@ export const getAllRoles = async (req: AuthRequest, res: Response) => {
                 updated_at: true,
             },
         });
-
         return res.status(200).json(roles);
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
+exports.getAllRoles = getAllRoles;
 /**
  * GET ROLE BY ID
  */
-export const getRoleById = async (req: AuthRequest, res: Response) => {
+const getRoleById = async (req, res) => {
     const { id } = req.params;
     const organization_id = req.user?.organization_id;
-
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
-
     try {
-        const role = await prisma.role.findUnique({
+        const role = await prisma_1.default.role.findUnique({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
@@ -60,35 +59,31 @@ export const getRoleById = async (req: AuthRequest, res: Response) => {
                 updated_at: true,
             },
         });
-
         if (!role) {
             return res.status(404).json({ message: "Role not found" });
         }
-
         return res.status(200).json(role);
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
+exports.getRoleById = getRoleById;
 /**
  * CREATE ROLE
  */
-export const createRole = async (req: AuthRequest, res: Response) => {
+const createRole = async (req, res) => {
     const { name } = req.body;
     const organization_id = req.user?.organization_id;
-
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
-
     if (!name) {
         return res.status(400).json({ message: "name is required" });
     }
-
     try {
-        const role = await prisma.role.create({
+        const role = await prisma_1.default.role.create({
             data: {
                 name,
                 organization_id,
@@ -100,39 +95,35 @@ export const createRole = async (req: AuthRequest, res: Response) => {
                 created_at: true,
             },
         });
-
         return res.status(201).json(role);
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
+exports.createRole = createRole;
 /**
  * UPDATE ROLE
  */
-export const updateRole = async (req: AuthRequest, res: Response) => {
+const updateRole = async (req, res) => {
     const { id } = req.params;
     const { name } = req.body;
     const organization_id = req.user?.organization_id;
-
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
-
     try {
-        const existing = await prisma.role.findUnique({
+        const existing = await prisma_1.default.role.findUnique({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
             }
         });
-
         if (!existing) {
             return res.status(404).json({ message: "Role not found" });
         }
-
-        const updated = await prisma.role.update({
+        const updated = await prisma_1.default.role.update({
             where: { id: Array.isArray(id) ? id[0] : id },
             data: {
                 ...(name && { name }),
@@ -144,44 +135,41 @@ export const updateRole = async (req: AuthRequest, res: Response) => {
                 updated_at: true,
             },
         });
-
         return res.status(200).json(updated);
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
+exports.updateRole = updateRole;
 /**
  * DELETE ROLE
  */
-export const deleteRole = async (req: AuthRequest, res: Response) => {
+const deleteRole = async (req, res) => {
     const { id } = req.params;
     const organization_id = req.user?.organization_id;
-
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
-
     try {
-        const existing = await prisma.role.findUnique({
+        const existing = await prisma_1.default.role.findUnique({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
             }
         });
-
         if (!existing) {
             return res.status(404).json({ message: "Role not found" });
         }
-
-        await prisma.role.delete({
+        await prisma_1.default.role.delete({
             where: { id: Array.isArray(id) ? id[0] : id }
         });
-
         return res.status(200).json({ message: "Role deleted successfully" });
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
+exports.deleteRole = deleteRole;

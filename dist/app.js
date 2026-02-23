@@ -11,6 +11,7 @@ const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
 const department_route_1 = __importDefault(require("./routes/department.route"));
 const division_route_1 = __importDefault(require("./routes/division.route"));
+const role_route_1 = __importDefault(require("./routes/role.route"));
 const app = (0, express_1.default)();
 // 1. CORS Configuration
 const allowedOrigins = [
@@ -53,6 +54,7 @@ app.use("/api/auth", auth_routes_1.default);
 app.use("/api/users", user_route_1.default);
 app.use("/api/departments", department_route_1.default);
 app.use("/api/divisions", division_route_1.default);
+app.use("/api/roles", role_route_1.default);
 // 4. Utility & Documentation
 app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
 // Health check endpoint
