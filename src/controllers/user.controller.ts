@@ -111,32 +111,76 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
   }
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * CREATE USER (Admin Only)
  */
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: AuthRequest, res: Response) => {
   const {
     name,
     email,
     password,
     phone_number,
-    organization_id,
-    department_id,
     division_id,
+    department_id,
     role_id,
   } = req.body;
 
-  try {
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
+  const organization_id = req.user?.organization_id;
 
-    if (existing) {
+  if (!organization_id) {
+    return res.status(401).json({ message: "Unauthorized - Organization context missing" });
+  }
+
+  // 1. Basic Validation
+  if (!name || !email || !password || !phone_number || !division_id || !department_id || !role_id) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (!EMAIL_REGEX.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters" });
+  }
+
+  try {
+    // 2. Resource Existence & Ownership Checks
+    const [existingEmail, division, department, role] = await Promise.all([
+      prisma.user.findUnique({ where: { email } }),
+      prisma.division.findFirst({ where: { id: division_id, organization_id } }),
+      prisma.department.findFirst({
+        where: {
+          id: department_id,
+          division_id,
+          organization_id
+        }
+      }),
+      prisma.role.findFirst({ where: { id: role_id, organization_id } }),
+    ]);
+
+    if (existingEmail) {
       return res.status(409).json({ message: "Email already exists" });
     }
 
+    if (!division) {
+      return res.status(400).json({ message: "Invalid division or access denied" });
+    }
+
+    if (!department) {
+      return res.status(400).json({ message: "Invalid department or it doesn't belong to the specified division" });
+    }
+
+    if (!role) {
+      return res.status(400).json({ message: "Invalid role or access denied" });
+    }
+
+    // 3. Security (Hashing)
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
+    // 4. Create User
     const user = await prisma.user.create({
       data: {
         name,
@@ -144,21 +188,29 @@ export const createUser = async (req: Request, res: Response) => {
         phone_number,
         password: hashedPassword,
         organization_id,
-        department_id,
         division_id,
+        department_id,
         role_id,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        role_id: true,
+        phone_number: true,
+        organization: { select: { id: true, name: true } },
+        division: { select: { id: true, name: true } },
+        department: { select: { id: true, name: true } },
+        role: { select: { id: true, name: true } },
+        created_at: true,
       },
     });
 
-    return res.status(201).json(user);
+    return res.status(201).json({
+      message: "User created successfully",
+      data: user,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Create user error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
