@@ -46,7 +46,7 @@ export const getRoleById = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        const role = await prisma.role.findUnique({
+        const role = await prisma.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
@@ -121,7 +121,7 @@ export const updateRole = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        const existing = await prisma.role.findUnique({
+        const existing = await prisma.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
@@ -171,7 +171,7 @@ export const deleteRole = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        const existing = await prisma.role.findUnique({
+        const existing = await prisma.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id

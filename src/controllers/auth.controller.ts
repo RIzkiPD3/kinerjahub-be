@@ -7,32 +7,6 @@ const SALT_ROUNDS = 10;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * GET ALL USERS
- */
-export const getAllUsers = async (req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        organization_id: true,
-        department_id: true,
-        role: {
-          select: { id: true, name: true },
-        },
-        created_at: true,
-      },
-    });
-
-    return res.status(200).json(users);
-  } catch (error: unknown) {
-    console.error("Get all users error:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-/**
  * REGISTER
  */
 export const register = async (req: Request, res: Response) => {
