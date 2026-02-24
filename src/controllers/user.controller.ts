@@ -369,17 +369,35 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 /**
  * DELETE USER (Admin Only)
  */
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const organization_id = req.user?.organization_id;
+
+  if (!organization_id) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const userId = Array.isArray(id) ? id[0] : id;
 
   try {
+    const existing = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        organization_id
+      },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "User not found or access denied" });
+    }
+
     await prisma.user.delete({
-      where: { id: Array.isArray(id) ? id[0] : id },
+      where: { id: userId },
     });
 
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Delete user error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
