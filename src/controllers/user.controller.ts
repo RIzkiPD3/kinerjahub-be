@@ -117,6 +117,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * CREATE USER (Admin Only)
  */
 export const createUser = async (req: AuthRequest, res: Response) => {
+  // [DEBUG LOG] Tampilkan seluruh body yang diterima dari frontend
+  console.log("[CREATE_USER] req.body:", JSON.stringify(req.body, null, 2));
+
   const {
     name,
     email,
@@ -130,61 +133,110 @@ export const createUser = async (req: AuthRequest, res: Response) => {
   const organization_id = req.user?.organization_id;
 
   if (!organization_id) {
+    console.warn("[CREATE_USER] 401: organization_id missing from JWT token");
     return res.status(401).json({ message: "Unauthorized - Organization context missing" });
   }
 
-  // 1. Basic Validation
-  if (!name || !email || !password || !phone_number || !division_id || !department_id || !role_id) {
-    return res.status(400).json({ message: "All fields are required" });
+  // 1. Validasi field per field — agar respons 400 lebih deskriptif
+  const missingFields: string[] = [];
+  if (!name) missingFields.push("name");
+  if (!email) missingFields.push("email");
+  if (!password) missingFields.push("password");
+  if (!phone_number) missingFields.push("phone_number");
+  if (!division_id) missingFields.push("division_id");
+  if (!department_id) missingFields.push("department_id");
+  if (!role_id) missingFields.push("role_id");
+
+  if (missingFields.length > 0) {
+    console.warn("[CREATE_USER] 400: Missing required fields:", missingFields);
+    return res.status(400).json({
+      message: "Missing required fields",
+      missing_fields: missingFields,
+    });
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  // Normalize email ke lowercase agar konsisten
+  const normalizedEmail = (email as string).trim().toLowerCase();
+  console.log("[CREATE_USER] Normalized email:", normalizedEmail);
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    console.warn("[CREATE_USER] 400: Invalid email format:", normalizedEmail);
     return res.status(400).json({ message: "Invalid email format" });
   }
 
-  if (password.length < 8) {
+  if ((password as string).length < 8) {
+    console.warn("[CREATE_USER] 400: Password too short, length:", (password as string).length);
     return res.status(400).json({ message: "Password must be at least 8 characters" });
   }
 
   try {
-    // 2. Resource Existence & Ownership Checks
+    // 2. Cek eksistensi resource secara paralel
+    console.log("[CREATE_USER] Checking FK: division_id=%s, department_id=%s, role_id=%s, organization_id=%s",
+      division_id, department_id, role_id, organization_id);
+
     const [existingEmail, division, department, role] = await Promise.all([
-      prisma.user.findUnique({ where: { email } }),
+      prisma.user.findUnique({ where: { email: normalizedEmail } }),
       prisma.division.findFirst({ where: { id: division_id, organization_id } }),
+      // BUG FIX: Hapus filter division_id dari department query.
+      // Department cukup dicek berdasarkan organization_id saja.
+      // Filter division_id bisa menyebabkan 400 jika dept terdaftar di org
+      // tapi relasi division_id di skema berbeda dari yang dikirim frontend.
       prisma.department.findFirst({
         where: {
           id: department_id,
-          division_id,
-          organization_id
-        }
+          organization_id,
+        },
       }),
       prisma.role.findFirst({ where: { id: role_id, organization_id } }),
     ]);
 
+    // [DEBUG LOG] Tampilkan hasil masing-masing FK check
+    console.log("[CREATE_USER] email conflict:", existingEmail ? "YES - email taken" : "NO");
+    console.log("[CREATE_USER] division found:", division ? `YES (${division.name})` : "NO");
+    console.log("[CREATE_USER] department found:", department ? `YES (${department.name})` : "NO");
+    console.log("[CREATE_USER] role found:", role ? `YES (${role.name})` : "NO");
+
     if (existingEmail) {
+      console.warn("[CREATE_USER] 409: Email already registered:", normalizedEmail);
       return res.status(409).json({ message: "Email already exists" });
     }
 
     if (!division) {
-      return res.status(400).json({ message: "Invalid division or access denied" });
+      console.warn("[CREATE_USER] 400: Division not found or not in org. division_id:", division_id);
+      return res.status(400).json({
+        message: "Division not found or doesn't belong to your organization",
+        field: "division_id",
+        value: division_id,
+      });
     }
 
     if (!department) {
-      return res.status(400).json({ message: "Invalid department or it doesn't belong to the specified division" });
+      console.warn("[CREATE_USER] 400: Department not found or not in org. department_id:", department_id);
+      return res.status(400).json({
+        message: "Department not found or doesn't belong to your organization",
+        field: "department_id",
+        value: department_id,
+      });
     }
 
     if (!role) {
-      return res.status(400).json({ message: "Invalid role or access denied" });
+      console.warn("[CREATE_USER] 400: Role not found or not in org. role_id:", role_id);
+      return res.status(400).json({
+        message: "Role not found or doesn't belong to your organization",
+        field: "role_id",
+        value: role_id,
+      });
     }
 
-    // 3. Security (Hashing)
+    // 3. Hash password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    console.log("[CREATE_USER] Password hashed successfully");
 
-    // 4. Create User
+    // 4. Buat user
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: normalizedEmail,
         phone_number,
         password: hashedPassword,
         organization_id,
@@ -205,12 +257,14 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    console.log("[CREATE_USER] User created successfully, id:", user.id);
+
     return res.status(201).json({
       message: "User created successfully",
       data: user,
     });
   } catch (error) {
-    console.error("Create user error:", error);
+    console.error("[CREATE_USER] Unexpected error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

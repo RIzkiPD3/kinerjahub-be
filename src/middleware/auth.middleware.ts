@@ -5,7 +5,8 @@ export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: string;
+    role: string;        // role name (e.g. "Admin") — digunakan untuk authorizeRole
+    role_id: string;    // role UUID — disimpan untuk forward-compatibility
     organization_id: string;
   };
 }
@@ -36,15 +37,22 @@ export const verifyToken = (
   }
 };
 
+// roles: array of role names yang diizinkan, case-insensitive.
+// Contoh: authorizeRole(["Admin"]) akan cocok dengan "admin", "ADMIN", "Admin".
 export const authorizeRole = (roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRole = req.user.role?.toLowerCase();
+    const allowedRoles = roles.map((r) => r.toLowerCase());
+
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({
         message: "Forbidden - You do not have permission",
+        required_roles: roles,
+        your_role: req.user.role,
       });
     }
 
