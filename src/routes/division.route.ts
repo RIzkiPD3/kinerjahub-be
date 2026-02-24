@@ -78,7 +78,7 @@ router.post("/", verifyToken, authorizeRole(["Admin"]), createDivision);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Division found
@@ -105,7 +105,7 @@ router.get("/:id", verifyToken, getDivisionById);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     requestBody:
  *       content:
  *         application/json:
@@ -137,7 +137,7 @@ router.put("/:id", verifyToken, authorizeRole(["Admin"]), updateDivision);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Division deleted
