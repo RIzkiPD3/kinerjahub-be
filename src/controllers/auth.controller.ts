@@ -56,7 +56,11 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid input" });
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  // BUG FIX: Normalize email to lowercase sebelum disimpan,
+  // agar konsisten dengan proses login yang juga normalize ke lowercase.
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
     return res.status(400).json({ message: "Invalid email format" });
   }
 
@@ -66,7 +70,7 @@ export const register = async (req: Request, res: Response) => {
 
   try {
     const existing = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existing) {
@@ -109,10 +113,10 @@ export const register = async (req: Request, res: Response) => {
         },
       });
 
-      // 5. Create User
+      // 5. Create User (gunakan normalizedEmail, bukan raw email)
       return await tx.user.create({
         data: {
-          email,
+          email: normalizedEmail,
           name,
           password: hashedPassword,
           phone_number,
@@ -137,7 +141,8 @@ export const register = async (req: Request, res: Response) => {
       {
         id: user.id,
         email: user.email,
-        role: user.role?.name,
+        role: user.role?.name,       // nama role untuk authorizeRole (case-insensitive)
+        role_id: user.role_id,       // UUID role untuk forward-compatibility
         organization_id: user.organization_id,
       },
       jwtSecret,
@@ -170,6 +175,7 @@ export const login = async (req: Request, res: Response) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  console.log("[LOGIN] Attempting login for email:", normalizedEmail);
 
   try {
     const user = await prisma.user.findUnique({
@@ -177,31 +183,49 @@ export const login = async (req: Request, res: Response) => {
       include: { role: true },
     });
 
+    // [DEBUG LOG] Cek apakah user ditemukan di database
+    console.log("[LOGIN] User found in DB:", user ? `YES (id: ${user.id})` : "NO - user not found");
+
     if (!user) {
+      console.warn("[LOGIN] 401 triggered: user not found for email:", normalizedEmail);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    // [DEBUG LOG] Pastikan password di DB ada dan tidak kosong
+    console.log("[LOGIN] User password hash exists:", !!user.password, "| Hash prefix:", user.password?.substring(0, 7));
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    // [DEBUG LOG] Cek hasil bcrypt.compare
+    console.log("[LOGIN] bcrypt.compare result:", isPasswordValid);
+
     if (!isPasswordValid) {
+      console.warn("[LOGIN] 401 triggered: password mismatch for user id:", user.id);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.error("JWT_SECRET is not defined in environment variables");
+      console.error("[LOGIN] JWT_SECRET is not defined in environment variables");
       return res.status(500).json({ message: "Internal server error" });
     }
+
+    // [DEBUG LOG] JWT akan di-generate
+    console.log("[LOGIN] Generating JWT for user id:", user.id, "role:", user.role?.name);
 
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
-        role: user.role?.name,
+        role: user.role?.name,       // nama role untuk authorizeRole (case-insensitive)
+        role_id: user.role_id,       // UUID role untuk forward-compatibility
         organization_id: user.organization_id,
       },
       jwtSecret,
       { expiresIn: "1d" }
     );
+
+    console.log("[LOGIN] Login successful for user id:", user.id);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -213,7 +237,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error: unknown) {
-    console.error("Login error:", error);
+    console.error("[LOGIN] Unexpected login error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
