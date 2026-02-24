@@ -21,13 +21,13 @@ const options: swaggerJsdoc.Options = {
         User: {
           type: 'object',
           properties: {
-            id: { type: 'integer' },
+            id: { type: 'string', format: 'uuid' },
             name: { type: 'string' },
             email: { type: 'string' },
             phone_number: { type: 'string' },
-            organization_id: { type: 'integer' },
-            department_id: { type: 'integer' },
-            role_id: { type: 'integer' },
+            organization_id: { type: 'string', format: 'uuid' },
+            department_id: { type: 'string', format: 'uuid' },
+            role_id: { type: 'string', format: 'uuid' },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' },
           },
@@ -55,20 +55,20 @@ const options: swaggerJsdoc.Options = {
         Department: {
           type: 'object',
           properties: {
-            id: { type: 'integer' },
+            id: { type: 'string', format: 'uuid' },
             name: { type: 'string' },
-            division_id: { type: 'integer' },
+            division_id: { type: 'string', format: 'uuid' },
             organization: {
               type: 'object',
               properties: {
-                id: { type: 'integer' },
+                id: { type: 'string', format: 'uuid' },
                 name: { type: 'string' },
               },
             },
             division: {
               type: 'object',
               properties: {
-                id: { type: 'integer' },
+                id: { type: 'string', format: 'uuid' },
                 name: { type: 'string' },
               },
             },
@@ -81,19 +81,19 @@ const options: swaggerJsdoc.Options = {
           required: ['name', 'division_id'],
           properties: {
             name: { type: 'string', example: 'Engineering' },
-            division_id: { type: 'integer', example: 1 },
+            division_id: { type: 'string', format: 'uuid', example: '5f80ae5d-4321-44f1-9b18-b4de1916ea65' },
           },
         },
         Division: {
           type: 'object',
           properties: {
-            id: { type: 'integer' },
+            id: { type: 'string', format: 'uuid' },
             name: { type: 'string' },
-            organization_id: { type: 'integer' },
+            organization_id: { type: 'string', format: 'uuid' },
             organization: {
               type: 'object',
               properties: {
-                id: { type: 'integer' },
+                id: { type: 'string', format: 'uuid' },
                 name: { type: 'string' },
               },
             },
@@ -102,7 +102,7 @@ const options: swaggerJsdoc.Options = {
               items: {
                 type: 'object',
                 properties: {
-                  id: { type: 'integer' },
+                  id: { type: 'string', format: 'uuid' },
                   name: { type: 'string' },
                 },
               },
@@ -116,7 +116,7 @@ const options: swaggerJsdoc.Options = {
           required: ['name', 'organization_id'],
           properties: {
             name: { type: 'string', example: 'Technology' },
-            organization_id: { type: 'integer', example: 1 },
+            organization_id: { type: 'string', format: 'uuid', example: '5f80ae5d-4321-44f1-9b18-b4de1916ea65' },
           },
         },
       },

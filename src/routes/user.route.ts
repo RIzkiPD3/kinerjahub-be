@@ -20,7 +20,7 @@ const router = Router();
  *   get:
  *     tags:
  *       - Users
- *     summary: Get all users (Admin Only)
+ *     summary: Get all users
  *     responses:
  *       200:
  *         description: Success
@@ -32,10 +32,10 @@ const router = Router();
  *                 $ref: '#/components/schemas/User'
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *     security:
+ *       - bearerAuth: []
  */
-router.get("/", verifyToken, authorizeRole(["Admin"]), getAllUsers);
+router.get("/", verifyToken, getAllUsers);
 
 /**
  * @openapi
@@ -69,17 +69,21 @@ router.post("/", verifyToken, authorizeRole(["Admin"]), createUser);
  *     tags:
  *       - Users
  *     summary: Delete a user (Admin Only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Deleted
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.delete("/:id", verifyToken, authorizeRole(["Admin"]), deleteUser);
 
@@ -90,12 +94,14 @@ router.delete("/:id", verifyToken, authorizeRole(["Admin"]), deleteUser);
  *     tags:
  *       - Users
  *     summary: Get user by ID
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Success
@@ -103,6 +109,8 @@ router.delete("/:id", verifyToken, authorizeRole(["Admin"]), deleteUser);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Not Found
  */
@@ -114,13 +122,15 @@ router.get("/:id", verifyToken, getUserById);
  *   put:
  *     tags:
  *       - Users
- *     summary: Update a user
+ *     summary: Update a user (Admin Only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     requestBody:
  *       content:
  *         application/json:
@@ -133,7 +143,11 @@ router.get("/:id", verifyToken, getUserById);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
-router.put("/:id", verifyToken, updateUser);
+router.put("/:id", verifyToken, authorizeRole(["Admin"]), updateUser);
 
 export default router;

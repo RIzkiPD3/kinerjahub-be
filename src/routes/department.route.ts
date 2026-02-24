@@ -78,7 +78,7 @@ router.post("/", verifyToken, authorizeRole(["Admin"]), createDepartment);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Department found
@@ -105,7 +105,7 @@ router.get("/:id", verifyToken, getDepartmentById);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     requestBody:
  *       content:
  *         application/json:
@@ -137,7 +137,7 @@ router.put("/:id", verifyToken, authorizeRole(["Admin"]), updateDepartment);
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Department deleted

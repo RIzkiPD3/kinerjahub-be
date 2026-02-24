@@ -274,16 +274,18 @@ export const createUser = async (req: AuthRequest, res: Response) => {
  */
 export const updateUser = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { name, email, password, department_id, division_id, role_id } = req.body;
+  const { name, email, password, phone_number, department_id, division_id, role_id } = req.body;
 
   try {
     const organization_id = req.user?.organization_id;
 
     if (!organization_id) {
+      console.warn("[UPDATE_USER] 401: organization_id missing from JWT");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const userId = Array.isArray(id) ? id[0] : id;
+    console.log(`[UPDATE_USER] Start update for userId: ${userId}, organizationId: ${organization_id}`);
 
     const existing = await prisma.user.findFirst({
       where: {
@@ -293,25 +295,42 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     });
 
     if (!existing) {
+      console.warn(`[UPDATE_USER] 404: User not found for id: ${userId}`);
       return res.status(404).json({ message: "User not found" });
     }
 
-    let hashedPassword = existing.password;
+    // Build update data object
+    const updateData: any = {};
+
+    if (name) updateData.name = name;
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!EMAIL_REGEX.test(normalizedEmail)) {
+        console.warn("[UPDATE_USER] 400: Invalid email format:", normalizedEmail);
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      updateData.email = normalizedEmail;
+    }
 
     if (password) {
-      hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      if (password.length < 8) {
+        console.warn("[UPDATE_USER] 400: Password too short, length:", password.length);
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+      console.log(`[UPDATE_USER] Password provided, hashing...`);
+      updateData.password = await bcrypt.hash(password, SALT_ROUNDS);
     }
+
+    if (phone_number) updateData.phone_number = phone_number;
+    if (department_id) updateData.department_id = department_id;
+    if (division_id) updateData.division_id = division_id;
+    if (role_id) updateData.role_id = role_id;
+
+    console.log(`[UPDATE_USER] Applying update to DB with keys: ${Object.keys(updateData).join(", ")}`);
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        department_id,
-        division_id,
-        role_id,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -339,9 +358,10 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    console.log(`[UPDATE_USER] Update successful for userId: ${userId}`);
     return res.status(200).json(updated);
   } catch (error) {
-    console.error(error);
+    console.error("[UPDATE_USER] Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
