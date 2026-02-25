@@ -7,6 +7,7 @@ import userRouter from "./routes/user.route";
 import departmentRouter from "./routes/department.route";
 import divisionRouter from "./routes/division.route";
 import roleRouter from "./routes/role.route";
+import taskRouter from "./routes/task.route";
 
 const app: Application = express();
 
@@ -64,6 +65,7 @@ app.use("/api/users", userRouter);
 app.use("/api/departments", departmentRouter);
 app.use("/api/divisions", divisionRouter);
 app.use("/api/roles", roleRouter);
+app.use("/api/tasks", taskRouter);
 
 // 4. Utility & Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
