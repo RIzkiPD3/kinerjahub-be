@@ -118,6 +118,7 @@ export const register = async (req: Request, res: Response) => {
         role: user.role?.name,       // nama role untuk authorizeRole (case-insensitive)
         role_id: user.role_id,       // UUID role untuk forward-compatibility
         organization_id: user.organization_id,
+        department_id: user.department_id,
       },
       jwtSecret,
       { expiresIn: "1d" }
@@ -194,6 +195,7 @@ export const login = async (req: Request, res: Response) => {
         role: user.role?.name,       // nama role untuk authorizeRole (case-insensitive)
         role_id: user.role_id,       // UUID role untuk forward-compatibility
         organization_id: user.organization_id,
+        department_id: user.department_id,
       },
       jwtSecret,
       { expiresIn: "1d" }

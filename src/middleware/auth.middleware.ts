@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     role: string;        // role name (e.g. "Admin") — digunakan untuk authorizeRole
     role_id: string;    // role UUID — disimpan untuk forward-compatibility
     organization_id: string;
+    department_id: string;
   };
 }
 
