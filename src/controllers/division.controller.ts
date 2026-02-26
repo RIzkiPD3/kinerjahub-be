@@ -20,6 +20,8 @@ export const getAllDivisions = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                head: true,
+                description: true,
                 organization_id: true,
                 organization: { select: { id: true, name: true } },
                 created_at: true,
@@ -54,6 +56,8 @@ export const getDivisionById = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                head: true,
+                description: true,
                 organization_id: true,
                 organization: { select: { id: true, name: true } },
                 departments: { select: { id: true, name: true } },
@@ -77,7 +81,7 @@ export const getDivisionById = async (req: AuthRequest, res: Response) => {
  * CREATE DIVISION
  */
 export const createDivision = async (req: AuthRequest, res: Response) => {
-    const { name } = req.body;
+    const { name, head, description } = req.body;
     const organization_id = req.user?.organization_id;
 
     if (!organization_id) {
@@ -92,11 +96,15 @@ export const createDivision = async (req: AuthRequest, res: Response) => {
         const division = await prisma.division.create({
             data: {
                 name,
+                head,
+                description,
                 organization_id,
             },
             select: {
                 id: true,
                 name: true,
+                head: true,
+                description: true,
                 organization_id: true,
                 created_at: true,
             },
@@ -114,7 +122,7 @@ export const createDivision = async (req: AuthRequest, res: Response) => {
  */
 export const updateDivision = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, head, description } = req.body;
     const organization_id = req.user?.organization_id;
 
     if (!organization_id) {
@@ -139,10 +147,14 @@ export const updateDivision = async (req: AuthRequest, res: Response) => {
             where: { id: divisionId },
             data: {
                 ...(name && { name }),
+                ...(head !== undefined && { head }),
+                ...(description !== undefined && { description }),
             },
             select: {
                 id: true,
                 name: true,
+                head: true,
+                description: true,
                 organization_id: true,
                 updated_at: true,
             },

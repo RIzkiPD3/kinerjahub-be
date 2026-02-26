@@ -2,6 +2,8 @@ model Division {
   id              String       @id @default(uuid())
   organization_id String       @map("organization_id")
   name            String
+  head            String?
+  description     String?
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")
   departments     Department[]
