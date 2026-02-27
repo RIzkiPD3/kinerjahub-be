@@ -24,14 +24,20 @@ function isAdmin(role: string): boolean {
     return role.toLowerCase() === "admin";
 }
 
-function asString(val: unknown): string | undefined {
-    if (typeof val === "string") return val;
-    if (Array.isArray(val) && typeof val[0] === "string") return val[0];
-    return undefined;
-}
-
 function paramStr(val: string | string[]): string {
     return Array.isArray(val) ? val[0] : val;
+}
+
+function handleZodError(res: Response, result: any) {
+    if (result.success) return res; // Should not happen
+    return res.status(400).json({
+        success: false,
+        message: "Input tidak valid",
+        errors: result.error.issues.map((issue: z.ZodIssue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+        })),
+    });
 }
 
 // ─────────────────────────────────────────────
@@ -41,20 +47,33 @@ function paramStr(val: string | string[]): string {
 const createTaskSchema = z.object({
     title: z
         .string()
-        .min(1, "Title wajib diisi")
-        .max(150, "Title maksimal 150 karakter"),
+        .min(1, "Judul wajib diisi")
+        .max(150, "Judul maksimal 150 karakter"),
     description: z.string().optional(),
-    story_point: z.number().int().min(1, "Story point minimal 1"),
-    deadline: z.string().refine(
-        (val) => !isNaN(new Date(val).getTime()),
-        "Deadline harus berupa tanggal yang valid"
-    ),
+    department_id: z.string().uuid("department_id harus berupa UUID yang valid"),
+    assigned_to: z.string().uuid("assigned_to harus berupa UUID yang valid"),
+    story_point: z
+        .coerce.number()
+        .int("Story point harus berupa bilangan bulat")
+        .min(1, "Story point minimal 1")
+        .max(10, "Story point maksimal 10"),
+    deadline: z
+        .string()
+        .min(1, "Deadline wajib diisi")
+        .refine(
+            (val) => !isNaN(new Date(val).getTime()),
+            "Deadline harus berupa format tanggal ISO yang valid"
+        ),
 });
 
 const updateTaskSchema = z.object({
-    title: z.string().min(1).max(150).optional(),
+    title: z.string().min(1, "Judul minimal 1 karakter").max(150, "Judul maksimal 150 karakter").optional(),
     description: z.string().optional(),
-    story_point: z.number().int().min(1).optional(),
+    story_point: z
+        .coerce.number()
+        .int("Story point harus berupa bilangan bulat")
+        .min(1, "Story point minimal 1")
+        .optional(),
     deadline: z
         .string()
         .refine((val) => !isNaN(new Date(val).getTime()), "Deadline tidak valid")
@@ -71,7 +90,7 @@ const assignTaskSchema = z.object({
 // ─────────────────────────────────────────────
 
 export const createTask = async (req: AuthRequest, res: Response) => {
-    const { id: created_by, organization_id, department_id, role } = req.user!;
+    const { id: actor_id, organization_id, role } = req.user!;
 
     if (!isAdminOrKoordinator(role)) {
         return res.status(403).json({
@@ -81,18 +100,14 @@ export const createTask = async (req: AuthRequest, res: Response) => {
     }
 
     const parsed = createTaskSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res.status(400).json({
-            success: false,
-            message: parsed.error.issues[0].message,
-        });
-    }
+    if (!parsed.success) return handleZodError(res, parsed);
 
-    const { title, description, story_point, deadline } = parsed.data;
+    const { title, description, department_id, assigned_to, story_point, deadline } = parsed.data;
 
     const deadlineDate = new Date(deadline);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     if (deadlineDate < today) {
         return res.status(400).json({
             success: false,
@@ -101,23 +116,61 @@ export const createTask = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        const task = await prisma.task.create({
-            data: {
-                title,
-                description,
-                story_point,
-                deadline: deadlineDate,
-                status: TaskStatus.TO_DO,
-                assigned_to: undefined,
-                created_by,
-                organization_id,
-                department_id,
-            },
-            include: {
-                creator: { select: { id: true, name: true, email: true } },
-                department: { select: { id: true, name: true } },
-                organization: { select: { id: true, name: true } },
-            },
+        const department = await prisma.department.findFirst({
+            where: { id: department_id, organization_id },
+        });
+
+        if (!department) {
+            return res.status(404).json({
+                success: false,
+                message: "Departemen tidak ditemukan atau tidak sesuai dengan organisasi Anda",
+            });
+        }
+
+        const assignee = await prisma.user.findFirst({
+            where: { id: assigned_to, organization_id },
+        });
+
+        if (!assignee) {
+            return res.status(404).json({
+                success: false,
+                message: "User yang dituju (assignee) tidak ditemukan di organisasi Anda",
+            });
+        }
+
+        // Transaction: Create Task + Initial Log
+        const task = await prisma.$transaction(async (tx) => {
+            const newTask = await tx.task.create({
+                data: {
+                    title,
+                    description,
+                    story_point,
+                    deadline: deadlineDate,
+                    status: TaskStatus.TO_DO,
+                    assigned_to,
+                    created_by: actor_id,
+                    organization_id,
+                    department_id,
+                },
+                include: {
+                    creator: { select: { id: true, name: true, email: true } },
+                    assignee: { select: { id: true, name: true, email: true } },
+                    department: { select: { id: true, name: true } },
+                    organization: { select: { id: true, name: true } },
+                },
+            });
+
+            await tx.taskLog.create({
+                data: {
+                    task_id: newTask.id,
+                    user_id: actor_id,
+                    organization_id,
+                    activity: "Task dibuat",
+                    new_status: TaskStatus.TO_DO,
+                },
+            });
+
+            return newTask;
         });
 
         return res.status(201).json({
@@ -129,7 +182,7 @@ export const createTask = async (req: AuthRequest, res: Response) => {
         console.error("createTask error:", error);
         return res
             .status(500)
-            .json({ success: false, message: "Internal server error" });
+            .json({ success: false, message: "Terjadi kesalahan pada server saat membuat task" });
     }
 };
 
@@ -140,13 +193,11 @@ export const createTask = async (req: AuthRequest, res: Response) => {
 export const getAllTasks = async (req: AuthRequest, res: Response) => {
     const { id: user_id, organization_id, department_id, role } = req.user!;
 
-    const statusParam = asString(req.query.status);
-    const assignedToParam = asString(req.query.assigned_to);
-    const deptIdParam = asString(req.query.department_id);
+    const statusParam = req.query.status as string | undefined;
+    const assignedToParam = req.query.assigned_to as string | undefined;
+    const deptIdParam = req.query.department_id as string | undefined;
 
     const roleLC = role.toLowerCase();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { organization_id };
 
     if (roleLC === "admin") {
@@ -154,7 +205,6 @@ export const getAllTasks = async (req: AuthRequest, res: Response) => {
     } else if (roleLC === "koordinator") {
         where.department_id = department_id;
     } else {
-        // Staff: hanya task miliknya
         where.assigned_to = user_id;
     }
 
@@ -216,7 +266,6 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
                 .json({ success: false, message: "Task tidak ditemukan" });
         }
 
-        // Staff hanya boleh lihat task miliknya
         if (role.toLowerCase() === "staff" && task.assigned_to !== user_id) {
             return res.status(403).json({
                 success: false,
@@ -243,15 +292,10 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
 
 export const updateTask = async (req: AuthRequest, res: Response) => {
     const id = paramStr(req.params.id);
-    const { id: user_id, organization_id, role } = req.user!;
+    const { id: actor_id, organization_id, role } = req.user!;
 
     const parsed = updateTaskSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res.status(400).json({
-            success: false,
-            message: parsed.error.issues[0].message,
-        });
-    }
+    if (!parsed.success) return handleZodError(res, parsed);
 
     const { title, description, story_point, deadline, status } = parsed.data;
 
@@ -268,18 +312,17 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 
         const roleLC = role.toLowerCase();
 
-        // Staff hanya boleh update task miliknya
-        if (roleLC === "staff" && task.assigned_to !== user_id) {
+        // Staff check
+        if (roleLC === "staff" && task.assigned_to !== actor_id) {
             return res.status(403).json({
                 success: false,
                 message: "Anda tidak memiliki akses ke task ini",
             });
         }
 
-        // Validasi status flow
-        if (status !== undefined) {
+        // Status flow validation
+        if (status !== undefined && status !== task.status) {
             const allowedNext = STATUS_FLOW[task.status];
-
             if (status !== allowedNext) {
                 return res.status(400).json({
                     success: false,
@@ -287,7 +330,6 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
                 });
             }
 
-            // Staff tidak boleh set status DELIVERED
             if (status === TaskStatus.DELIVERED && !isAdminOrKoordinator(role)) {
                 return res.status(403).json({
                     success: false,
@@ -296,7 +338,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        // Deadline hanya boleh diubah Admin/Koordinator
+        // Deadline check
         if (deadline !== undefined && !isAdminOrKoordinator(role)) {
             return res.status(403).json({
                 success: false,
@@ -317,20 +359,48 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        const updated = await prisma.task.update({
-            where: { id },
-            data: {
-                ...(title !== undefined && { title }),
-                ...(description !== undefined && { description }),
-                ...(story_point !== undefined && { story_point }),
-                ...(deadlineDate !== undefined && { deadline: deadlineDate }),
-                ...(status !== undefined && { status }),
-            },
-            include: {
-                creator: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
-                department: { select: { id: true, name: true } },
-            },
+        // Transaction for update + logging status changes
+        const updated = await prisma.$transaction(async (tx) => {
+            const updatedTask = await tx.task.update({
+                where: { id },
+                data: {
+                    ...(title !== undefined && { title }),
+                    ...(description !== undefined && { description }),
+                    ...(story_point !== undefined && { story_point }),
+                    ...(deadlineDate !== undefined && { deadline: deadlineDate }),
+                    ...(status !== undefined && { status }),
+                },
+                include: {
+                    creator: { select: { id: true, name: true, email: true } },
+                    assignee: { select: { id: true, name: true, email: true } },
+                    department: { select: { id: true, name: true } },
+                },
+            });
+
+            if (status !== undefined && status !== task.status) {
+                await tx.taskLog.create({
+                    data: {
+                        task_id: id,
+                        user_id: actor_id,
+                        organization_id,
+                        activity: `Status berubah dari ${task.status} ke ${status}`,
+                        old_status: task.status,
+                        new_status: status,
+                    },
+                });
+            } else if (Object.keys(parsed.data).length > 0) {
+                // If it's not a status change but other fields were updated
+                await tx.taskLog.create({
+                    data: {
+                        task_id: id,
+                        user_id: actor_id,
+                        organization_id,
+                        activity: "Data task diperbarui",
+                    },
+                });
+            }
+
+            return updatedTask;
         });
 
         return res.status(200).json({
@@ -410,12 +480,7 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
     }
 
     const parsed = assignTaskSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res.status(400).json({
-            success: false,
-            message: parsed.error.issues[0].message,
-        });
-    }
+    if (!parsed.success) return handleZodError(res, parsed);
 
     const { assigned_to } = parsed.data;
 
@@ -437,7 +502,6 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Verifikasi assignee ada di department yang sama
         const assignee = await prisma.user.findFirst({
             where: {
                 id: assigned_to,
@@ -455,7 +519,6 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Transaction: update task + create log
         const [updatedTask] = await prisma.$transaction([
             prisma.task.update({
                 where: { id },
