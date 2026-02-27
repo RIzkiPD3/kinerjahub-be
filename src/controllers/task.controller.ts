@@ -51,7 +51,7 @@ const createTaskSchema = z.object({
         .max(150, "Judul maksimal 150 karakter"),
     description: z.string().optional(),
     department_id: z.string().uuid("department_id harus berupa UUID yang valid"),
-    assigned_to: z.string().uuid("assigned_to harus berupa UUID yang valid"),
+    assigned_to: z.string().uuid("assigned_to harus berupa UUID yang valid").optional().nullable(),
     story_point: z
         .coerce.number()
         .int("Story point harus berupa bilangan bulat")
@@ -127,15 +127,17 @@ export const createTask = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        const assignee = await prisma.user.findFirst({
-            where: { id: assigned_to, organization_id },
-        });
-
-        if (!assignee) {
-            return res.status(404).json({
-                success: false,
-                message: "User yang dituju (assignee) tidak ditemukan di organisasi Anda",
+        if (assigned_to) {
+            const assignee = await prisma.user.findFirst({
+                where: { id: assigned_to, organization_id },
             });
+
+            if (!assignee) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User yang dituju (assignee) tidak ditemukan di organisasi Anda",
+                });
+            }
         }
 
         // Transaction: Create Task + Initial Log
@@ -147,7 +149,7 @@ export const createTask = async (req: AuthRequest, res: Response) => {
                     story_point,
                     deadline: deadlineDate,
                     status: TaskStatus.TO_DO,
-                    assigned_to,
+                    assigned_to: assigned_to || undefined,
                     created_by: actor_id,
                     organization_id,
                     department_id,
