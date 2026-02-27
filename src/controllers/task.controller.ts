@@ -157,7 +157,13 @@ export const createTask = async (req: AuthRequest, res: Response) => {
                 include: {
                     creator: { select: { id: true, name: true, email: true } },
                     assignee: { select: { id: true, name: true, email: true } },
-                    department: { select: { id: true, name: true } },
+                    department: {
+                        select: {
+                            id: true,
+                            name: true,
+                            division: { select: { id: true, name: true } }
+                        }
+                    },
                     organization: { select: { id: true, name: true } },
                 },
             });
@@ -178,7 +184,10 @@ export const createTask = async (req: AuthRequest, res: Response) => {
         return res.status(201).json({
             success: true,
             message: "Task berhasil dibuat",
-            data: task,
+            data: {
+                ...task,
+                division: (task.department as any)?.division
+            },
         });
     } catch (error) {
         console.error("createTask error:", error);
@@ -221,15 +230,26 @@ export const getAllTasks = async (req: AuthRequest, res: Response) => {
             include: {
                 creator: { select: { id: true, name: true, email: true } },
                 assignee: { select: { id: true, name: true, email: true } },
-                department: { select: { id: true, name: true } },
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        division: { select: { id: true, name: true } }
+                    }
+                },
             },
             orderBy: { created_at: "desc" },
         });
 
+        const mappedTasks = tasks.map(t => ({
+            ...t,
+            division: (t.department as any)?.division
+        }));
+
         return res.status(200).json({
             success: true,
             message: "Berhasil mengambil daftar task",
-            data: tasks,
+            data: mappedTasks,
         });
     } catch (error) {
         console.error("getAllTasks error:", error);
@@ -253,7 +273,13 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
             include: {
                 creator: { select: { id: true, name: true, email: true } },
                 assignee: { select: { id: true, name: true, email: true } },
-                department: { select: { id: true, name: true } },
+                department: {
+                    select: {
+                        id: true,
+                        name: true,
+                        division: { select: { id: true, name: true } }
+                    }
+                },
                 organization: { select: { id: true, name: true } },
                 task_logs: {
                     include: { user: { select: { id: true, name: true } } },
@@ -278,7 +304,10 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Berhasil mengambil detail task",
-            data: task,
+            data: {
+                ...task,
+                division: (task.department as any)?.division
+            },
         });
     } catch (error) {
         console.error("getTaskById error:", error);
@@ -375,7 +404,13 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
                 include: {
                     creator: { select: { id: true, name: true, email: true } },
                     assignee: { select: { id: true, name: true, email: true } },
-                    department: { select: { id: true, name: true } },
+                    department: {
+                        select: {
+                            id: true,
+                            name: true,
+                            division: { select: { id: true, name: true } }
+                        }
+                    },
                 },
             });
 
@@ -408,7 +443,10 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Task berhasil diupdate",
-            data: updated,
+            data: {
+                ...updated,
+                division: (updated.department as any)?.division
+            },
         });
     } catch (error) {
         console.error("updateTask error:", error);
@@ -528,7 +566,13 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
                 include: {
                     creator: { select: { id: true, name: true, email: true } },
                     assignee: { select: { id: true, name: true, email: true } },
-                    department: { select: { id: true, name: true } },
+                    department: {
+                        select: {
+                            id: true,
+                            name: true,
+                            division: { select: { id: true, name: true } }
+                        }
+                    },
                 },
             }),
             prisma.taskLog.create({
@@ -546,7 +590,10 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             success: true,
             message: `Task berhasil di-assign ke ${assignee.name}`,
-            data: updatedTask,
+            data: {
+                ...updatedTask,
+                division: (updatedTask.department as any)?.division
+            },
         });
     } catch (error) {
         console.error("assignTask error:", error);

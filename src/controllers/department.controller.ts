@@ -8,6 +8,7 @@ import prisma from "../lib/prisma";
 export const getAllDepartments = async (req: AuthRequest, res: Response) => {
     try {
         const organization_id = req.user?.organization_id;
+        const { division_id } = req.query;
 
         if (!organization_id) {
             return res.status(401).json({ message: "Unauthorized - Organization context missing" });
@@ -16,6 +17,7 @@ export const getAllDepartments = async (req: AuthRequest, res: Response) => {
         const departments = await prisma.department.findMany({
             where: {
                 organization_id,
+                ...(division_id && { division_id: String(division_id) }),
             },
             select: {
                 id: true,
