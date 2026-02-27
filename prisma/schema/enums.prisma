@@ -2,7 +2,6 @@ enum TaskStatus {
   TO_DO
   IN_PROGRESS
   DONE
-  DELIVERED
 }
 
 enum AttendanceStatus {
