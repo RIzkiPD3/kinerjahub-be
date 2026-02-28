@@ -8,11 +8,11 @@ import { AuthRequest } from "../middleware/auth.middleware";
 // Helpers
 // ─────────────────────────────────────────────
 
-const STATUS_FLOW: Record<TaskStatus, TaskStatus | null> = {
-    TO_DO: TaskStatus.IN_PROGRESS,
-    IN_PROGRESS: TaskStatus.DONE,
-    DONE: TaskStatus.DELIVERED,
-    DELIVERED: null,
+const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
+    TO_DO: [TaskStatus.IN_PROGRESS],
+    IN_PROGRESS: [TaskStatus.DONE],
+    DONE: [TaskStatus.DELIVERED],
+    DELIVERED: [],
 };
 
 function isAdminOrKoordinator(role: string): boolean {
@@ -353,11 +353,13 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 
         // Status flow validation
         if (status !== undefined && status !== task.status) {
-            const allowedNext = STATUS_FLOW[task.status];
-            if (status !== allowedNext) {
+            const validNext = VALID_TRANSITIONS[task.status] || [];
+            const isValidTransition = validNext.includes(status);
+
+            if (!isValidTransition && !isAdminOrKoordinator(role)) {
                 return res.status(400).json({
                     success: false,
-                    message: `Status hanya bisa berubah dari ${task.status} ke ${allowedNext ?? "(tidak ada)"}`,
+                    message: `Status tidak valid. Dari ${task.status}, status hanya bisa berubah ke: ${validNext.length > 0 ? validNext.join(", ") : "(tidak ada)"}`,
                 });
             }
 
