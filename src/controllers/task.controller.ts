@@ -57,13 +57,7 @@ const createTaskSchema = z.object({
         .int("Story point harus berupa bilangan bulat")
         .min(1, "Story point minimal 1")
         .max(10, "Story point maksimal 10"),
-    deadline: z
-        .string()
-        .min(1, "Deadline wajib diisi")
-        .refine(
-            (val) => !isNaN(new Date(val).getTime()),
-            "Deadline harus berupa format tanggal ISO yang valid"
-        ),
+    deadline: z.string().min(1, "Deadline wajib diisi"),
 });
 
 const updateTaskSchema = z.object({
@@ -74,11 +68,8 @@ const updateTaskSchema = z.object({
         .int("Story point harus berupa bilangan bulat")
         .min(1, "Story point minimal 1")
         .optional(),
-    deadline: z
-        .string()
-        .refine((val) => !isNaN(new Date(val).getTime()), "Deadline tidak valid")
-        .optional(),
-    status: z.nativeEnum(TaskStatus).optional(),
+    deadline: z.string().optional(),
+    status: z.enum(["TO_DO", "IN_PROGRESS", "DONE", "DELIVERED"]).optional(),
 });
 
 const assignTaskSchema = z.object({
