@@ -1,0 +1,23 @@
+model Project {
+  id              String        @id @default(uuid())
+  organization_id String        @map("organization_id")
+  division_id     String        @map("division_id")
+  department_id   String        @map("department_id")
+  name            String
+  description     String?
+  status          ProjectStatus @default(ACTIVE)
+  start_date      DateTime?     @map("start_date") @db.Date
+  end_date        DateTime?     @map("end_date") @db.Date
+  deleted_at      DateTime?     @map("deleted_at")
+  created_at      DateTime      @default(now()) @map("created_at")
+  updated_at      DateTime      @updatedAt @map("updated_at")
+  department      Department    @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  division        Division      @relation(fields: [division_id], references: [id], onDelete: Cascade)
+  organization    Organization  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  tasks           Task[]
+
+  @@index([organization_id])
+  @@index([division_id])
+  @@index([department_id])
+  @@map("projects")
+}

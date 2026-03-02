@@ -52,12 +52,8 @@ const router = Router();
  *       403:
  *         description: Forbidden
  */
-router.post(
-    "/",
-    verifyToken,
-    authorizeRole(["Admin", "Koordinator"]),
-    createTask
-);
+// router.post("/", verifyToken, authorizeRole(["Admin", "Koordinator"]), createTask); // Moved to project.route.ts (/projects/:projectId/tasks)
+
 
 /**
  * @openapi
