@@ -1,20 +1,19 @@
 model Task {
-  id          String     @id @default(uuid())
-  project_id  String     @map("project_id")
-  title       String
-  description String?
-  status      TaskStatus @default(TO_DO)
-  story_point Int        @map("story_point")
-  deadline    DateTime   @db.Date
-  created_by  String     @map("created_by")
-  assigned_to String?    @map("assigned_to")
-  created_at  DateTime   @default(now()) @map("created_at")
-  updated_at  DateTime   @updatedAt @map("updated_at")
-
+  id             String        @id @default(uuid())
+  title          String
+  description    String?
+  status         TaskStatus    @default(TO_DO)
+  story_point    Int           @map("story_point")
+  deadline       DateTime      @db.Date
+  created_by     String        @map("created_by")
+  assigned_to    String?       @map("assigned_to")
+  created_at     DateTime      @default(now()) @map("created_at")
+  updated_at     DateTime      @updatedAt @map("updated_at")
+  project_id     String        @map("project_id")
   task_logs      TaskLog[]
-  project        Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   assignee       User?         @relation("TaskAssignedTo", fields: [assigned_to], references: [id], onDelete: Cascade)
   creator        User          @relation("TaskCreatedBy", fields: [created_by], references: [id], onDelete: Cascade)
+  project        Project       @relation(fields: [project_id], references: [id], onDelete: Cascade)
   department     Department?   @relation(fields: [departmentId], references: [id])
   departmentId   String?
   organization   Organization? @relation(fields: [organizationId], references: [id])

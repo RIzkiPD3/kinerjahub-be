@@ -2,13 +2,13 @@ model Division {
   id              String       @id @default(uuid())
   organization_id String       @map("organization_id")
   name            String
-  head            String?
-  description     String?
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")
+  description     String?
+  head            String?
   departments     Department[]
-  projects        Project[]
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  projects        Project[]
   users           User[]
 
   @@index([organization_id])
