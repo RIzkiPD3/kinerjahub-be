@@ -7,8 +7,9 @@ model Department {
   updated_at      DateTime     @updatedAt @map("updated_at")
   division        Division     @relation(fields: [division_id], references: [id], onDelete: Cascade)
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  tasks           Task[]
+  projects        Project[]
   users           User[]
+  tasks           Task[]
 
   @@index([organization_id])
   @@index([division_id])

@@ -7,6 +7,7 @@ model Division {
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")
   departments     Department[]
+  projects        Project[]
   organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   users           User[]
 

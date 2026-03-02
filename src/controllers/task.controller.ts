@@ -29,7 +29,7 @@ function paramStr(val: string | string[]): string {
 }
 
 function handleZodError(res: Response, result: any) {
-    if (result.success) return res; // Should not happen
+    if (result.success) return res;
     return res.status(400).json({
         success: false,
         message: "Input tidak valid",
@@ -50,7 +50,6 @@ const createTaskSchema = z.object({
         .min(1, "Judul wajib diisi")
         .max(150, "Judul maksimal 150 karakter"),
     description: z.string().optional(),
-    department_id: z.string().uuid("department_id harus berupa UUID yang valid"),
     assigned_to: z.string().uuid("assigned_to harus berupa UUID yang valid").optional().nullable(),
     story_point: z
         .coerce.number()
@@ -77,10 +76,55 @@ const assignTaskSchema = z.object({
 });
 
 // ─────────────────────────────────────────────
+// Task Response Mapper
+// ─────────────────────────────────────────────
+
+// Helper to format task response as requested in Rule 7
+function mapTaskResponse(t: any) {
+    return {
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        story_point: t.story_point,
+        deadline: t.deadline,
+        status: t.status,
+        projectName: t.project?.name,
+        divisionName: t.project?.division?.name,
+        departmentName: t.project?.department?.name,
+        assignedUser: t.assignee ? {
+            id: t.assignee.id,
+            name: t.assignee.name,
+            email: t.assignee.email
+        } : null,
+        creator: t.creator ? {
+            id: t.creator.id,
+            name: t.creator.name,
+            email: t.creator.email
+        } : null,
+        createdAt: t.created_at,
+        updatedAt: t.updated_at,
+    };
+}
+
+const taskInclude = {
+    creator: { select: { id: true, name: true, email: true } },
+    assignee: { select: { id: true, name: true, email: true } },
+    project: {
+        select: {
+            id: true,
+            name: true,
+            division: { select: { id: true, name: true } },
+            department: { select: { id: true, name: true } }
+        }
+    }
+};
+
+// ─────────────────────────────────────────────
 // 1. CREATE TASK
 // ─────────────────────────────────────────────
 
 export const createTask = async (req: AuthRequest, res: Response) => {
+    const projectId = paramStr(req.params.projectId);
     const { id: actor_id, organization_id, role } = req.user!;
 
     if (!isAdminOrKoordinator(role)) {
@@ -93,7 +137,7 @@ export const createTask = async (req: AuthRequest, res: Response) => {
     const parsed = createTaskSchema.safeParse(req.body);
     if (!parsed.success) return handleZodError(res, parsed);
 
-    const { title, description, department_id, assigned_to, story_point, deadline } = parsed.data;
+    const { title, description, assigned_to, story_point, deadline } = parsed.data;
 
     const deadlineDate = new Date(deadline);
     const today = new Date();
@@ -107,14 +151,14 @@ export const createTask = async (req: AuthRequest, res: Response) => {
     }
 
     try {
-        const department = await prisma.department.findFirst({
-            where: { id: department_id, organization_id },
+        const project = await prisma.project.findFirst({
+            where: { id: projectId, organization_id, deleted_at: null },
         });
 
-        if (!department) {
+        if (!project) {
             return res.status(404).json({
                 success: false,
-                message: "Departemen tidak ditemukan atau tidak sesuai dengan organisasi Anda",
+                message: "Project tidak ditemukan atau tidak tersedia",
             });
         }
 
@@ -131,7 +175,6 @@ export const createTask = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        // Transaction: Create Task + Initial Log
         const task = await prisma.$transaction(async (tx) => {
             const newTask = await tx.task.create({
                 data: {
@@ -142,21 +185,9 @@ export const createTask = async (req: AuthRequest, res: Response) => {
                     status: TaskStatus.TO_DO,
                     assigned_to: assigned_to || undefined,
                     created_by: actor_id,
-                    organization_id,
-                    department_id,
+                    project_id: projectId,
                 },
-                include: {
-                    creator: { select: { id: true, name: true, email: true } },
-                    assignee: { select: { id: true, name: true, email: true } },
-                    department: {
-                        select: {
-                            id: true,
-                            name: true,
-                            division: { select: { id: true, name: true } }
-                        }
-                    },
-                    organization: { select: { id: true, name: true } },
-                },
+                include: taskInclude,
             });
 
             await tx.taskLog.create({
@@ -175,78 +206,93 @@ export const createTask = async (req: AuthRequest, res: Response) => {
         return res.status(201).json({
             success: true,
             message: "Task berhasil dibuat",
-            data: {
-                ...task,
-                division: (task.department as any)?.division
-            },
+            data: mapTaskResponse(task),
         });
     } catch (error) {
         console.error("createTask error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Terjadi kesalahan pada server saat membuat task" });
+        return res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan pada server saat membuat task"
+        });
     }
 };
 
 // ─────────────────────────────────────────────
-// 2. GET ALL TASKS
+// 2. GET TASKS BY PROJECT
+// ─────────────────────────────────────────────
+
+export const getTasksByProject = async (req: AuthRequest, res: Response) => {
+    const projectId = paramStr(req.params.projectId);
+    const { organization_id } = req.user!;
+
+    try {
+        const project = await prisma.project.findFirst({
+            where: { id: projectId, organization_id, deleted_at: null },
+        });
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project tidak ditemukan",
+            });
+        }
+
+        const tasks = await prisma.task.findMany({
+            where: { project_id: projectId },
+            include: taskInclude,
+            orderBy: { created_at: "desc" },
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Berhasil mengambil daftar task project",
+            data: tasks.map(mapTaskResponse),
+        });
+    } catch (error) {
+        console.error("getTasksByProject error:", error);
+        return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// ─────────────────────────────────────────────
+// 2.1 GET ALL TASKS (Legacy / Global)
 // ─────────────────────────────────────────────
 
 export const getAllTasks = async (req: AuthRequest, res: Response) => {
     const { id: user_id, organization_id, department_id, role } = req.user!;
-
     const statusParam = req.query.status as string | undefined;
-    const assignedToParam = req.query.assigned_to as string | undefined;
-    const deptIdParam = req.query.department_id as string | undefined;
+
+    const where: any = {
+        project: {
+            organization_id,
+            deleted_at: null
+        }
+    };
 
     const roleLC = role.toLowerCase();
-    const where: any = { organization_id };
-
-    if (roleLC === "admin") {
-        if (deptIdParam) where.department_id = deptIdParam;
-    } else if (roleLC === "koordinator") {
-        where.department_id = department_id;
-    } else {
+    if (roleLC === "koordinator") {
+        where.project.department_id = department_id;
+    } else if (roleLC === "staff") {
         where.assigned_to = user_id;
     }
 
     if (statusParam) where.status = statusParam as TaskStatus;
-    if (assignedToParam && roleLC !== "staff") {
-        where.assigned_to = assignedToParam;
-    }
 
     try {
         const tasks = await prisma.task.findMany({
             where,
-            include: {
-                creator: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                        division: { select: { id: true, name: true } }
-                    }
-                },
-            },
+            include: taskInclude,
             orderBy: { created_at: "desc" },
         });
-
-        const mappedTasks = tasks.map(t => ({
-            ...t,
-            division: (t.department as any)?.division
-        }));
 
         return res.status(200).json({
             success: true,
             message: "Berhasil mengambil daftar task",
-            data: mappedTasks,
+            data: tasks.map(mapTaskResponse),
         });
     } catch (error) {
         console.error("getAllTasks error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -260,18 +306,12 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
 
     try {
         const task = await prisma.task.findFirst({
-            where: { id, organization_id },
+            where: {
+                id,
+                project: { organization_id, deleted_at: null }
+            },
             include: {
-                creator: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                        division: { select: { id: true, name: true } }
-                    }
-                },
-                organization: { select: { id: true, name: true } },
+                ...taskInclude,
                 task_logs: {
                     include: { user: { select: { id: true, name: true } } },
                     orderBy: { created_at: "desc" },
@@ -280,9 +320,7 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
         });
 
         if (!task) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Task tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "Task tidak ditemukan" });
         }
 
         if (role.toLowerCase() === "staff" && task.assigned_to !== user_id) {
@@ -292,19 +330,19 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
             });
         }
 
+        const { task_logs, ...rest } = task;
+
         return res.status(200).json({
             success: true,
             message: "Berhasil mengambil detail task",
             data: {
-                ...task,
-                division: (task.department as any)?.division
+                ...mapTaskResponse(rest),
+                task_logs
             },
         });
     } catch (error) {
         console.error("getTaskById error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -323,18 +361,18 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 
     try {
         const task = await prisma.task.findFirst({
-            where: { id, organization_id },
+            where: {
+                id,
+                project: { organization_id, deleted_at: null }
+            },
         });
 
         if (!task) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Task tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "Task tidak ditemukan" });
         }
 
         const roleLC = role.toLowerCase();
 
-        // Staff check
         if (roleLC === "staff" && task.assigned_to !== actor_id) {
             return res.status(403).json({
                 success: false,
@@ -342,18 +380,14 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        // Status flow validation
         if (status !== undefined && status !== task.status) {
             const validNext = VALID_TRANSITIONS[task.status] || [];
-            const isValidTransition = validNext.includes(status);
-
-            if (!isValidTransition && !isAdminOrKoordinator(role)) {
+            if (!validNext.includes(status) && !isAdminOrKoordinator(role)) {
                 return res.status(400).json({
                     success: false,
-                    message: `Status tidak valid. Dari ${task.status}, status hanya bisa berubah ke: ${validNext.length > 0 ? validNext.join(", ") : "(tidak ada)"}`,
+                    message: `Status tidak valid. Dari ${task.status}, status hanya bisa berubah ke: ${validNext.join(", ")}`,
                 });
             }
-
             if (status === TaskStatus.DELIVERED && !isAdminOrKoordinator(role)) {
                 return res.status(403).json({
                     success: false,
@@ -362,7 +396,6 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        // Deadline check
         if (deadline !== undefined && !isAdminOrKoordinator(role)) {
             return res.status(403).json({
                 success: false,
@@ -383,7 +416,6 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
             }
         }
 
-        // Transaction for update + logging status changes
         const updated = await prisma.$transaction(async (tx) => {
             const updatedTask = await tx.task.update({
                 where: { id },
@@ -394,17 +426,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
                     ...(deadlineDate !== undefined && { deadline: deadlineDate }),
                     ...(status !== undefined && { status }),
                 },
-                include: {
-                    creator: { select: { id: true, name: true, email: true } },
-                    assignee: { select: { id: true, name: true, email: true } },
-                    department: {
-                        select: {
-                            id: true,
-                            name: true,
-                            division: { select: { id: true, name: true } }
-                        }
-                    },
-                },
+                include: taskInclude,
             });
 
             if (status !== undefined && status !== task.status) {
@@ -418,8 +440,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
                         new_status: status,
                     },
                 });
-            } else if (Object.keys(parsed.data).length > 0) {
-                // If it's not a status change but other fields were updated
+            } else {
                 await tx.taskLog.create({
                     data: {
                         task_id: id,
@@ -436,16 +457,11 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Task berhasil diupdate",
-            data: {
-                ...updated,
-                division: (updated.department as any)?.division
-            },
+            data: mapTaskResponse(updated),
         });
     } catch (error) {
         console.error("updateTask error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -466,13 +482,14 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
 
     try {
         const task = await prisma.task.findFirst({
-            where: { id, organization_id },
+            where: {
+                id,
+                project: { organization_id }
+            },
         });
 
         if (!task) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Task tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "Task tidak ditemukan" });
         }
 
         if (task.status === TaskStatus.DELIVERED) {
@@ -491,9 +508,7 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
         });
     } catch (error) {
         console.error("deleteTask error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -519,13 +534,14 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
 
     try {
         const task = await prisma.task.findFirst({
-            where: { id, organization_id },
+            where: {
+                id,
+                project: { organization_id, deleted_at: null }
+            },
         });
 
         if (!task) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Task tidak ditemukan" });
+            return res.status(404).json({ success: false, message: "Task tidak ditemukan" });
         }
 
         if (task.status === TaskStatus.DELIVERED) {
@@ -539,7 +555,6 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
             where: {
                 id: assigned_to,
                 organization_id,
-                department_id: task.department_id,
             },
             select: { id: true, name: true, email: true },
         });
@@ -547,8 +562,7 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
         if (!assignee) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "User yang dituju tidak ditemukan atau bukan dari department yang sama",
+                message: "User yang dituju tidak ditemukan di organisasi Anda",
             });
         }
 
@@ -556,17 +570,7 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
             prisma.task.update({
                 where: { id },
                 data: { assigned_to },
-                include: {
-                    creator: { select: { id: true, name: true, email: true } },
-                    assignee: { select: { id: true, name: true, email: true } },
-                    department: {
-                        select: {
-                            id: true,
-                            name: true,
-                            division: { select: { id: true, name: true } }
-                        }
-                    },
-                },
+                include: taskInclude,
             }),
             prisma.taskLog.create({
                 data: {
@@ -583,15 +587,10 @@ export const assignTask = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             success: true,
             message: `Task berhasil di-assign ke ${assignee.name}`,
-            data: {
-                ...updatedTask,
-                division: (updatedTask.department as any)?.division
-            },
+            data: mapTaskResponse(updatedTask),
         });
     } catch (error) {
         console.error("assignTask error:", error);
-        return res
-            .status(500)
-            .json({ success: false, message: "Internal server error" });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

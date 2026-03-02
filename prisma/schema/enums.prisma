@@ -11,3 +11,9 @@ enum AttendanceStatus {
   PERMISSION
   ABSENT
 }
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}

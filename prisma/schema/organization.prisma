@@ -8,10 +8,11 @@ model Organization {
   attendances Attendance[]
   departments Department[]
   divisions   Division[]
+  projects    Project[]
   roles       Role[]
   task_logs   TaskLog[]
-  tasks       Task[]
   users       User[]
+  tasks       Task[]
 
   @@map("organizations")
 }
