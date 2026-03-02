@@ -70,7 +70,7 @@ router.post("/", auth_middleware_1.verifyToken, (0, auth_middleware_1.authorizeR
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Department found
@@ -96,7 +96,7 @@ router.get("/:id", auth_middleware_1.verifyToken, department_controller_1.getDep
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     requestBody:
  *       content:
  *         application/json:
@@ -127,7 +127,7 @@ router.put("/:id", auth_middleware_1.verifyToken, (0, auth_middleware_1.authoriz
  *         name: id
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
  *         description: Department deleted

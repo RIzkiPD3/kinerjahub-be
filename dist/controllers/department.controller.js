@@ -10,7 +10,16 @@ const prisma_1 = __importDefault(require("../lib/prisma"));
  */
 const getAllDepartments = async (req, res) => {
     try {
+        const organization_id = req.user?.organization_id;
+        const { division_id } = req.query;
+        if (!organization_id) {
+            return res.status(401).json({ message: "Unauthorized - Organization context missing" });
+        }
         const departments = await prisma_1.default.department.findMany({
+            where: {
+                organization_id,
+                ...(division_id && { division_id: String(division_id) }),
+            },
             select: {
                 id: true,
                 name: true,
@@ -24,7 +33,7 @@ const getAllDepartments = async (req, res) => {
         return res.status(200).json(departments);
     }
     catch (error) {
-        console.error(error);
+        console.error("Get all departments error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -34,9 +43,16 @@ exports.getAllDepartments = getAllDepartments;
  */
 const getDepartmentById = async (req, res) => {
     const { id } = req.params;
+    const organization_id = req.user?.organization_id;
+    if (!organization_id) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
     try {
-        const department = await prisma_1.default.department.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id },
+        const department = await prisma_1.default.department.findFirst({
+            where: {
+                id: Array.isArray(id) ? id[0] : id,
+                organization_id
+            },
             select: {
                 id: true,
                 name: true,
@@ -48,12 +64,12 @@ const getDepartmentById = async (req, res) => {
             },
         });
         if (!department) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ message: "Department not found or access denied" });
         }
         return res.status(200).json(department);
     }
     catch (error) {
-        console.error(error);
+        console.error("Get department by ID error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -63,25 +79,32 @@ exports.getDepartmentById = getDepartmentById;
  */
 const createDepartment = async (req, res) => {
     const { name, division_id } = req.body;
+    const organization_id = req.user?.organization_id;
+    if (!organization_id) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
     if (!name || !division_id) {
         return res
             .status(400)
             .json({ message: "name and division_id are required" });
     }
     try {
-        // Derive organization_id from division
-        const division = await prisma_1.default.division.findUnique({
-            where: { id: division_id },
-            select: { organization_id: true }
+        // Verify division exists and belongs to the same organization
+        const division = await prisma_1.default.division.findFirst({
+            where: {
+                id: division_id,
+                organization_id
+            },
+            select: { id: true }
         });
         if (!division) {
-            return res.status(404).json({ message: "Division not found" });
+            return res.status(400).json({ message: "Invalid division or access denied" });
         }
         const department = await prisma_1.default.department.create({
             data: {
                 name,
-                organization_id: division.organization_id,
-                division_id: division_id,
+                organization_id,
+                division_id,
             },
             select: {
                 id: true,
@@ -93,7 +116,7 @@ const createDepartment = async (req, res) => {
         return res.status(201).json(department);
     }
     catch (error) {
-        console.error(error);
+        console.error("Create department error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -104,32 +127,39 @@ exports.createDepartment = createDepartment;
 const updateDepartment = async (req, res) => {
     const { id } = req.params;
     const { name, division_id } = req.body;
+    const organization_id = req.user?.organization_id;
+    if (!organization_id) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    const deptId = Array.isArray(id) ? id[0] : id;
     try {
-        const existing = await prisma_1.default.department.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id }
+        const existing = await prisma_1.default.department.findFirst({
+            where: {
+                id: deptId,
+                organization_id
+            }
         });
         if (!existing) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ message: "Department not found or access denied" });
         }
-        let organization_id = undefined;
+        // If division_id is updated, verify it belongs to the same organization
         if (division_id) {
-            const division = await prisma_1.default.division.findUnique({
-                where: { id: division_id },
-                select: { organization_id: true }
+            const division = await prisma_1.default.division.findFirst({
+                where: {
+                    id: division_id,
+                    organization_id
+                },
+                select: { id: true }
             });
             if (!division) {
-                return res.status(404).json({ message: "Division not found" });
+                return res.status(400).json({ message: "Invalid division or access denied" });
             }
-            organization_id = division.organization_id;
         }
         const updated = await prisma_1.default.department.update({
-            where: { id: Array.isArray(id) ? id[0] : id },
+            where: { id: deptId },
             data: {
                 ...(name && { name }),
-                ...(division_id && {
-                    division_id: division_id,
-                    organization_id: organization_id
-                }),
+                ...(division_id && { division_id }),
             },
             select: {
                 id: true,
@@ -141,7 +171,7 @@ const updateDepartment = async (req, res) => {
         return res.status(200).json(updated);
     }
     catch (error) {
-        console.error(error);
+        console.error("Update department error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -151,20 +181,28 @@ exports.updateDepartment = updateDepartment;
  */
 const deleteDepartment = async (req, res) => {
     const { id } = req.params;
+    const organization_id = req.user?.organization_id;
+    if (!organization_id) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    const deptId = Array.isArray(id) ? id[0] : id;
     try {
-        const existing = await prisma_1.default.department.findUnique({
-            where: { id: Array.isArray(id) ? id[0] : id }
+        const existing = await prisma_1.default.department.findFirst({
+            where: {
+                id: deptId,
+                organization_id
+            }
         });
         if (!existing) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ message: "Department not found or access denied" });
         }
         await prisma_1.default.department.delete({
-            where: { id: Array.isArray(id) ? id[0] : id }
+            where: { id: deptId }
         });
         return res.status(200).json({ message: "Department deleted successfully" });
     }
     catch (error) {
-        console.error(error);
+        console.error("Delete department error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -3,38 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.getUserById = exports.login = exports.register = exports.getAllUsers = void 0;
+exports.deleteUser = exports.getUserById = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const SALT_ROUNDS = 10;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-/**
- * GET ALL USERS
- */
-const getAllUsers = async (req, res) => {
-    try {
-        const users = await prisma_1.default.user.findMany({
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                organization_id: true,
-                department_id: true,
-                role: {
-                    select: { id: true, name: true },
-                },
-                created_at: true,
-            },
-        });
-        return res.status(200).json(users);
-    }
-    catch (error) {
-        console.error("Get all users error:", error);
-        return res.status(500).json({ message: "Internal server error" });
-    }
-};
-exports.getAllUsers = getAllUsers;
 /**
  * REGISTER
  */
@@ -48,7 +22,10 @@ const register = async (req, res) => {
         typeof phone_number !== "string") {
         return res.status(400).json({ message: "Invalid input" });
     }
-    if (!EMAIL_REGEX.test(email)) {
+    // BUG FIX: Normalize email to lowercase sebelum disimpan,
+    // agar konsisten dengan proses login yang juga normalize ke lowercase.
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
         return res.status(400).json({ message: "Invalid email format" });
     }
     if (password.length < 8) {
@@ -56,7 +33,7 @@ const register = async (req, res) => {
     }
     try {
         const existing = await prisma_1.default.user.findUnique({
-            where: { email },
+            where: { email: normalizedEmail },
         });
         if (existing) {
             return res.status(409).json({ message: "Email already registered" });
@@ -92,10 +69,10 @@ const register = async (req, res) => {
                     organization_id: organization.id,
                 },
             });
-            // 5. Create User
+            // 5. Create User (gunakan normalizedEmail, bukan raw email)
             return await tx.user.create({
                 data: {
-                    email,
+                    email: normalizedEmail,
                     name,
                     password: hashedPassword,
                     phone_number,
@@ -117,8 +94,10 @@ const register = async (req, res) => {
         const token = jsonwebtoken_1.default.sign({
             id: user.id,
             email: user.email,
-            role: user.role?.name,
+            role: user.role?.name, // nama role untuk authorizeRole (case-insensitive)
+            role_id: user.role_id, // UUID role untuk forward-compatibility
             organization_id: user.organization_id,
+            department_id: user.department_id,
         }, jwtSecret, { expiresIn: "1d" });
         const { password: _, ...userWithoutPassword } = user;
         return res.status(201).json({
@@ -144,29 +123,43 @@ const login = async (req, res) => {
         return res.status(400).json({ message: "Email and password are required" });
     }
     const normalizedEmail = email.trim().toLowerCase();
+    console.log("[LOGIN] Attempting login for email:", normalizedEmail);
     try {
         const user = await prisma_1.default.user.findUnique({
             where: { email: normalizedEmail },
             include: { role: true },
         });
+        // [DEBUG LOG] Cek apakah user ditemukan di database
+        console.log("[LOGIN] User found in DB:", user ? `YES (id: ${user.id})` : "NO - user not found");
         if (!user) {
+            console.warn("[LOGIN] 401 triggered: user not found for email:", normalizedEmail);
             return res.status(401).json({ message: "Invalid email or password" });
         }
+        // [DEBUG LOG] Pastikan password di DB ada dan tidak kosong
+        console.log("[LOGIN] User password hash exists:", !!user.password, "| Hash prefix:", user.password?.substring(0, 7));
         const isPasswordValid = await bcrypt_1.default.compare(password, user.password);
+        // [DEBUG LOG] Cek hasil bcrypt.compare
+        console.log("[LOGIN] bcrypt.compare result:", isPasswordValid);
         if (!isPasswordValid) {
+            console.warn("[LOGIN] 401 triggered: password mismatch for user id:", user.id);
             return res.status(401).json({ message: "Invalid email or password" });
         }
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
-            console.error("JWT_SECRET is not defined in environment variables");
+            console.error("[LOGIN] JWT_SECRET is not defined in environment variables");
             return res.status(500).json({ message: "Internal server error" });
         }
+        // [DEBUG LOG] JWT akan di-generate
+        console.log("[LOGIN] Generating JWT for user id:", user.id, "role:", user.role?.name);
         const token = jsonwebtoken_1.default.sign({
             id: user.id,
             email: user.email,
-            role: user.role?.name,
+            role: user.role?.name, // nama role untuk authorizeRole (case-insensitive)
+            role_id: user.role_id, // UUID role untuk forward-compatibility
             organization_id: user.organization_id,
+            department_id: user.department_id,
         }, jwtSecret, { expiresIn: "1d" });
+        console.log("[LOGIN] Login successful for user id:", user.id);
         const { password: _, ...userWithoutPassword } = user;
         return res.status(200).json({
             message: "Login success",
@@ -177,7 +170,7 @@ const login = async (req, res) => {
         });
     }
     catch (error) {
-        console.error("Login error:", error);
+        console.error("[LOGIN] Unexpected login error:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -12,13 +12,16 @@ const user_route_1 = __importDefault(require("./routes/user.route"));
 const department_route_1 = __importDefault(require("./routes/department.route"));
 const division_route_1 = __importDefault(require("./routes/division.route"));
 const role_route_1 = __importDefault(require("./routes/role.route"));
+const task_route_1 = __importDefault(require("./routes/task.route"));
+const project_route_1 = __importDefault(require("./routes/project.route"));
+const attendance_route_1 = __importDefault(require("./routes/attendance.route"));
 const app = (0, express_1.default)();
 // 1. CORS Configuration
 const allowedOrigins = [
-    "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
-    "https://kinerjahub-be-production.up.railway.app", // Production URL
+    "https://kinerjahub-fe.vercel.app",
+    "https://kinerjahub-29exjilty-rizkipd3s-projects.vercel.app",
     ...(process.env.ALLOWED_ORIGINS
         ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
         : []),
@@ -33,17 +36,14 @@ app.use((0, cors_1.default)({
         if (allowedOrigins.some((allowed) => allowed.replace(/\/$/, "") === normalizedOrigin)) {
             return callback(null, true);
         }
-        // Optional: Allow same-origin requests even if not explicitly in whitelist
-        const isSameOrigin = process.env.RAILWAY_STATIC_URL &&
-            normalizedOrigin.includes(process.env.RAILWAY_STATIC_URL);
-        if (isSameOrigin)
-            return callback(null, true);
         console.error(`[CORS Blocked] Origin: ${origin}`);
         callback(new Error(`CORS: Origin ${origin} not allowed`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    exposedHeaders: ["Content-Range", "X-Content-Range"],
+    maxAge: 86400, // 24 hours
 }));
 // 2. Body Parser Middleware - CRITICAL: Must be BEFORE routes
 // Standard body-parsers for JSON and form-data
@@ -55,6 +55,9 @@ app.use("/api/users", user_route_1.default);
 app.use("/api/departments", department_route_1.default);
 app.use("/api/divisions", division_route_1.default);
 app.use("/api/roles", role_route_1.default);
+app.use("/api/tasks", task_route_1.default);
+app.use("/api/projects", project_route_1.default);
+app.use("/api/attendances", attendance_route_1.default);
 // 4. Utility & Documentation
 app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.default));
 // Health check endpoint

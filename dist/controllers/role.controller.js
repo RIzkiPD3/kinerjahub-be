@@ -45,7 +45,7 @@ const getRoleById = async (req, res) => {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
     try {
-        const role = await prisma_1.default.role.findUnique({
+        const role = await prisma_1.default.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
@@ -114,7 +114,7 @@ const updateRole = async (req, res) => {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
     try {
-        const existing = await prisma_1.default.role.findUnique({
+        const existing = await prisma_1.default.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
@@ -122,6 +122,12 @@ const updateRole = async (req, res) => {
         });
         if (!existing) {
             return res.status(404).json({ message: "Role not found" });
+        }
+        // Proteksi: role system "Admin" tidak boleh di-rename
+        if (existing.name.toLowerCase() === "admin") {
+            return res.status(400).json({
+                message: "Role 'Admin' adalah role sistem dan tidak dapat diubah namanya",
+            });
         }
         const updated = await prisma_1.default.role.update({
             where: { id: Array.isArray(id) ? id[0] : id },
@@ -153,14 +159,30 @@ const deleteRole = async (req, res) => {
         return res.status(401).json({ message: "Unauthorized - Organization not found" });
     }
     try {
-        const existing = await prisma_1.default.role.findUnique({
+        const existing = await prisma_1.default.role.findFirst({
             where: {
                 id: Array.isArray(id) ? id[0] : id,
                 organization_id
-            }
+            },
+            include: {
+                // Hitung berapa user yang masih menggunakan role ini
+                users: { select: { id: true }, take: 1 },
+            },
         });
         if (!existing) {
             return res.status(404).json({ message: "Role not found" });
+        }
+        // Proteksi: role system "Admin" tidak boleh dihapus
+        if (existing.name.toLowerCase() === "admin") {
+            return res.status(400).json({
+                message: "Role 'Admin' adalah role sistem dan tidak dapat dihapus",
+            });
+        }
+        // Proteksi: role yang masih dipakai user tidak boleh dihapus
+        if (existing.users.length > 0) {
+            return res.status(400).json({
+                message: "Role ini masih digunakan oleh satu atau lebih user. Pindahkan user ke role lain sebelum menghapus.",
+            });
         }
         await prisma_1.default.role.delete({
             where: { id: Array.isArray(id) ? id[0] : id }
