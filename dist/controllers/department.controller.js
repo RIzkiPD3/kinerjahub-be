@@ -23,7 +23,7 @@ const getAllDepartments = async (req, res) => {
             select: {
                 id: true,
                 name: true,
-                head: { select: { name: true } },
+                head: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -57,7 +57,7 @@ const getDepartmentById = async (req, res) => {
             select: {
                 id: true,
                 name: true,
-                head: { select: { name: true } },
+                head: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -107,12 +107,12 @@ const createDepartment = async (req, res) => {
                 name,
                 organization_id,
                 division_id,
-                head_id: head || null,
+                head: head || null,
             },
             select: {
                 id: true,
                 name: true,
-                head: { select: { name: true } },
+                head: true,
                 division_id: true,
                 created_at: true,
             },
@@ -164,12 +164,12 @@ const updateDepartment = async (req, res) => {
             data: {
                 ...(name && { name }),
                 ...(division_id && { division_id }),
-                head_id: head !== undefined ? (head || null) : undefined,
+                head: head !== undefined ? (head || null) : undefined,
             },
             select: {
                 id: true,
                 name: true,
-                head: { select: { name: true } },
+                head: true,
                 division_id: true,
                 updated_at: true,
             },

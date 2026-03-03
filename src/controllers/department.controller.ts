@@ -22,7 +22,7 @@ export const getAllDepartments = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
-                head: { select: { id: true, name: true } },
+                head: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -58,7 +58,7 @@ export const getDepartmentById = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
-                head: { select: { id: true, name: true } },
+                head: true,
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -114,12 +114,12 @@ export const createDepartment = async (req: AuthRequest, res: Response) => {
                 name,
                 organization_id,
                 division_id,
-                head_id: head || null,
+                head: head || null,
             },
             select: {
                 id: true,
                 name: true,
-                head: { select: { id: true, name: true } },
+                head: true,
                 division_id: true,
                 created_at: true,
             },
@@ -178,12 +178,12 @@ export const updateDepartment = async (req: AuthRequest, res: Response) => {
             data: {
                 ...(name && { name }),
                 ...(division_id && { division_id }),
-                head_id: head !== undefined ? (head || null) : undefined,
+                head: head !== undefined ? (head || null) : undefined,
             },
             select: {
                 id: true,
                 name: true,
-                head: { select: { id: true, name: true } },
+                head: true,
                 division_id: true,
                 updated_at: true,
             },
