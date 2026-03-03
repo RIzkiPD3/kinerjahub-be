@@ -22,6 +22,7 @@ export const getAllDepartments = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                head: { select: { id: true, name: true } },
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -57,6 +58,7 @@ export const getDepartmentById = async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 name: true,
+                head: { select: { id: true, name: true } },
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -80,7 +82,7 @@ export const getDepartmentById = async (req: AuthRequest, res: Response) => {
  * CREATE DEPARTMENT
  */
 export const createDepartment = async (req: AuthRequest, res: Response) => {
-    const { name, division_id } = req.body;
+    const { name, division_id, head } = req.body;
     const organization_id = req.user?.organization_id;
 
     if (!organization_id) {
@@ -112,10 +114,12 @@ export const createDepartment = async (req: AuthRequest, res: Response) => {
                 name,
                 organization_id,
                 division_id,
+                head_id: head || null,
             },
             select: {
                 id: true,
                 name: true,
+                head: { select: { id: true, name: true } },
                 division_id: true,
                 created_at: true,
             },
@@ -133,7 +137,7 @@ export const createDepartment = async (req: AuthRequest, res: Response) => {
  */
 export const updateDepartment = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const { name, division_id } = req.body;
+    const { name, division_id, head } = req.body;
     const organization_id = req.user?.organization_id;
 
     if (!organization_id) {
@@ -174,10 +178,12 @@ export const updateDepartment = async (req: AuthRequest, res: Response) => {
             data: {
                 ...(name && { name }),
                 ...(division_id && { division_id }),
+                head_id: head !== undefined ? (head || null) : undefined,
             },
             select: {
                 id: true,
                 name: true,
+                head: { select: { id: true, name: true } },
                 division_id: true,
                 updated_at: true,
             },

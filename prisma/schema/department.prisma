@@ -3,6 +3,8 @@ model Department {
   organization_id String       @map("organization_id")
   division_id     String       @map("division_id")
   name            String
+  head_id         String?      @map("head_id")
+  head            User?        @relation("DepartmentHead", fields: [head_id], references: [id])
   created_at      DateTime     @default(now()) @map("created_at")
   updated_at      DateTime     @updatedAt @map("updated_at")
   division        Division     @relation(fields: [division_id], references: [id], onDelete: Cascade)

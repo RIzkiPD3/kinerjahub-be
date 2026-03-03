@@ -23,6 +23,7 @@ const getAllDepartments = async (req, res) => {
             select: {
                 id: true,
                 name: true,
+                head: { select: { name: true } },
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -56,6 +57,7 @@ const getDepartmentById = async (req, res) => {
             select: {
                 id: true,
                 name: true,
+                head: { select: { name: true } },
                 division_id: true,
                 organization: { select: { id: true, name: true } },
                 division: { select: { id: true, name: true } },
@@ -78,7 +80,7 @@ exports.getDepartmentById = getDepartmentById;
  * CREATE DEPARTMENT
  */
 const createDepartment = async (req, res) => {
-    const { name, division_id } = req.body;
+    const { name, division_id, head } = req.body;
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -105,10 +107,12 @@ const createDepartment = async (req, res) => {
                 name,
                 organization_id,
                 division_id,
+                head_id: head || null,
             },
             select: {
                 id: true,
                 name: true,
+                head: { select: { name: true } },
                 division_id: true,
                 created_at: true,
             },
@@ -126,7 +130,7 @@ exports.createDepartment = createDepartment;
  */
 const updateDepartment = async (req, res) => {
     const { id } = req.params;
-    const { name, division_id } = req.body;
+    const { name, division_id, head } = req.body;
     const organization_id = req.user?.organization_id;
     if (!organization_id) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -160,10 +164,12 @@ const updateDepartment = async (req, res) => {
             data: {
                 ...(name && { name }),
                 ...(division_id && { division_id }),
+                head_id: head !== undefined ? (head || null) : undefined,
             },
             select: {
                 id: true,
                 name: true,
+                head: { select: { name: true } },
                 division_id: true,
                 updated_at: true,
             },
